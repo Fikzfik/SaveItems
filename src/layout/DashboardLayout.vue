@@ -1,0 +1,654 @@
+<script setup>
+import { ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
+const isSidebarOpen = ref(true)
+const isMobileSidebarOpen = ref(false)
+
+const menuItems = [
+  { icon: 'dashboard', label: 'Dashboard', path: '/dashboard', badge: null },
+  { icon: 'inventory', label: 'Inventori', path: '/dashboard/inventori', badge: null },
+  { icon: 'transaction', label: 'Transaksi', path: '/dashboard/transaksi', badge: '3' },
+  { icon: 'report', label: 'Laporan', path: '/dashboard/laporan', badge: null },
+  { icon: 'user', label: 'User', path: '/dashboard/user', badge: null },
+]
+
+const isActive = (path) => {
+  return route.path === path
+}
+
+const navigate = (path) => {
+  router.push(path)
+  isMobileSidebarOpen.value = false
+}
+
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value
+}
+
+const toggleMobileSidebar = () => {
+  isMobileSidebarOpen.value = !isMobileSidebarOpen.value
+}
+
+const handleLogout = () => {
+  router.push('/')
+}
+</script>
+
+<template>
+  <div class="dashboard-wrapper">
+    <!-- Mobile Overlay -->
+    <div
+      class="mobile-overlay"
+      :class="{ active: isMobileSidebarOpen }"
+      @click="isMobileSidebarOpen = false"
+    ></div>
+
+    <!-- Sidebar -->
+    <aside
+      class="sidebar"
+      :class="{ collapsed: !isSidebarOpen, 'mobile-open': isMobileSidebarOpen }"
+    >
+      <!-- Logo -->
+      <div class="sidebar-logo">
+        <div class="logo-icon">
+          <img src="@/assets/images/logo.png" alt="Fisy Logo" />
+        </div>
+        <span class="logo-text" v-show="isSidebarOpen">Fisy</span>
+      </div>
+
+      <!-- Menu Label -->
+      <div class="menu-label" v-show="isSidebarOpen">MAIN MENU</div>
+
+      <!-- Nav Items -->
+      <nav class="sidebar-nav">
+        <a
+          v-for="item in menuItems"
+          :key="item.path"
+          class="nav-item"
+          :class="{ active: isActive(item.path) }"
+          @click="navigate(item.path)"
+        >
+          <div class="nav-icon">
+            <!-- Dashboard -->
+            <svg v-if="item.icon === 'dashboard'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+            </svg>
+            <!-- Inventory -->
+            <svg v-else-if="item.icon === 'inventory'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+              <line x1="12" y1="22.08" x2="12" y2="12"/>
+            </svg>
+            <!-- Transaction -->
+            <svg v-else-if="item.icon === 'transaction'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <polyline points="17 1 21 5 17 9"/>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+              <polyline points="7 23 3 19 7 15"/>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+            </svg>
+            <!-- Report -->
+            <svg v-else-if="item.icon === 'report'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            <!-- User -->
+            <svg v-else-if="item.icon === 'user'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <span class="nav-label" v-show="isSidebarOpen">{{ item.label }}</span>
+          <span class="nav-badge" v-if="item.badge && isSidebarOpen">{{ item.badge }}</span>
+        </a>
+      </nav>
+
+      <!-- Promo Card -->
+      <div class="sidebar-promo" v-show="isSidebarOpen">
+        <div class="promo-card">
+          <div class="promo-icon">📦</div>
+          <p class="promo-title">Kelola inventori lebih efisien</p>
+          <p class="promo-text">Pantau semua barang perusahaan dalam satu tempat</p>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div class="sidebar-footer">
+        <a class="nav-item logout-item" @click="handleLogout">
+          <div class="nav-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </div>
+          <span class="nav-label" v-show="isSidebarOpen">Logout</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Area -->
+    <div class="main-area" :class="{ expanded: !isSidebarOpen }">
+      <!-- Navbar -->
+      <header class="navbar">
+        <div class="navbar-left">
+          <button class="hamburger" @click="toggleSidebar" title="Toggle Sidebar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <button class="hamburger mobile-only" @click="toggleMobileSidebar" title="Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" placeholder="Search..." />
+          </div>
+        </div>
+        <div class="navbar-right">
+          <button class="nav-btn" title="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="notif-dot"></span>
+          </button>
+          <div class="user-profile">
+            <div class="user-avatar">
+              <span>A</span>
+            </div>
+            <div class="user-info">
+              <span class="user-name">Admin</span>
+              <span class="user-role">Administrator</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-content">
+        <router-view />
+      </main>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.dashboard-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background: #f0f2f5;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ====== SIDEBAR ====== */
+.sidebar {
+  width: 260px;
+  background: #fff;
+  border-right: 1px solid #e8ecf1;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 100;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar.collapsed {
+  width: 80px;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid #f0f2f5;
+  margin-bottom: 8px;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.logo-text {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.menu-label {
+  padding: 16px 24px 8px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #b0b4c4;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* Nav Items */
+.sidebar-nav {
+  flex: 1;
+  padding: 0 12px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 2px;
+  text-decoration: none;
+  position: relative;
+  color: #5a6070;
+  font-size: 0.88rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.nav-item:hover {
+  background: #f0f4ff;
+  color: #1e3c72;
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(30, 60, 114, 0.3);
+}
+
+.nav-item.active .nav-icon svg {
+  stroke: #fff;
+}
+
+.nav-icon {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.nav-badge {
+  margin-left: auto;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.nav-item.active .nav-badge {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Promo Card */
+.sidebar-promo {
+  padding: 16px;
+}
+
+.promo-card {
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  border-radius: 16px;
+  padding: 20px 16px;
+  color: #fff;
+  text-align: center;
+}
+
+.promo-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.promo-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.promo-text {
+  font-size: 0.7rem;
+  opacity: 0.75;
+  line-height: 1.4;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  padding: 8px 12px 16px;
+  border-top: 1px solid #f0f2f5;
+}
+
+.logout-item {
+  color: #ef4444 !important;
+}
+
+.logout-item:hover {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+
+.logout-item .nav-icon svg {
+  stroke: #ef4444;
+}
+
+/* ====== MAIN AREA ====== */
+.main-area {
+  margin-left: 260px;
+  flex: 1;
+  min-height: 100vh;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.main-area.expanded {
+  margin-left: 80px;
+}
+
+/* ====== NAVBAR ====== */
+.navbar {
+  background: #fff;
+  border-bottom: 1px solid #e8ecf1;
+  padding: 0 28px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hamburger {
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: #f5f6fa;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  color: #5a6070;
+}
+
+.hamburger:hover {
+  background: #e8ecf1;
+}
+
+.hamburger svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mobile-only {
+  display: none;
+}
+
+.search-box {
+  position: relative;
+  width: 280px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #b0b4c4;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  border: 1.5px solid #e8ecf1;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: #333;
+  background: #f9fafb;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.search-box input:focus {
+  border-color: #1e3c72;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.08);
+}
+
+.search-box input::placeholder {
+  color: #b0b4c4;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f5f6fa;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5a6070;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.nav-btn:hover {
+  background: #e8ecf1;
+}
+
+.nav-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.notif-dot {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  background: #f9fafb;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.user-profile:hover {
+  background: #f0f2f5;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: 0.68rem;
+  color: #8b8fa3;
+  font-weight: 400;
+}
+
+/* ====== PAGE CONTENT ====== */
+.page-content {
+  padding: 28px;
+  min-height: calc(100vh - 68px);
+}
+
+/* ====== MOBILE OVERLAY ====== */
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 99;
+  backdrop-filter: blur(2px);
+}
+
+.mobile-overlay.active {
+  display: block;
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar.collapsed {
+    width: 260px;
+  }
+
+  .main-area,
+  .main-area.expanded {
+    margin-left: 0;
+  }
+
+  .hamburger:not(.mobile-only) {
+    display: none;
+  }
+
+  .mobile-only {
+    display: flex;
+  }
+
+  .search-box {
+    width: 200px;
+  }
+
+  .user-info {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar {
+    padding: 0 16px;
+    height: 60px;
+  }
+
+  .search-box {
+    display: none;
+  }
+
+  .page-content {
+    padding: 16px;
+  }
+}
+</style>

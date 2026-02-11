@@ -119,17 +119,17 @@ const toggleMode = () => {
 
         <div class="overlay-panel overlay-left">
           <div class="overlay-content">
-            <div class="overlay-icon"></div>
-            <h1>Already a Member?</h1>
-            <p>Sign in with your credentials to access your dashboard and continue where you left off</p>
+            <img src="@/assets/images/logo.png" alt="Fisy Logo" class="overlay-logo" />
+            <h1>Member of Fisy?</h1>
+            <p>Sign in with your credentials to access your dashboard and continue managing your inventory</p>
             <button class="btn ghost" @click="toggleMode">Sign In</button>
           </div>
         </div>
         <div class="overlay-panel overlay-right">
           <div class="overlay-content">
-            <div class="overlay-icon"></div>
-            <h1>New Here?</h1>
-            <p>Join our community and discover amazing features waiting just for you</p>
+            <img src="@/assets/images/logo.png" alt="Fisy Logo" class="overlay-logo" />
+            <h1>New to Fisy?</h1>
+            <p>Join our community and discover smart inventory management with Fisy</p>
             <button class="btn ghost" @click="toggleMode">Sign Up</button>
           </div>
         </div>
@@ -870,5 +870,12 @@ button.ghost:active {
   .form-actions {
     max-width: 100%;
   }
+}
+
+.overlay-logo {
+  width: 80px;
+  height: auto;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
 }
 </style>
