@@ -33,6 +33,37 @@ const filteredUsers = computed(() => {
 const getInitials = (name) => {
   return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
 }
+
+const showModal = ref(false)
+
+const newUser = ref({
+  nama: '',
+  email: '',
+  role: 'Staff',
+  departemen: 'IT',
+  phone: ''
+})
+
+const addUser = () => {
+  if (!newUser.value.nama || !newUser.value.email) return
+
+  const colors = ['#1e3c72', '#7c3aed', '#059669', '#ea580c', '#dc2626', '#0891b2', '#be185d']
+  const randomColor = colors[Math.floor(Math.random() * colors.length)]
+
+  users.value.unshift({
+    id: users.value.length + 1,
+    nama: newUser.value.nama,
+    role: newUser.value.role,
+    departemen: newUser.value.departemen,
+    phone: newUser.value.phone || '-',
+    email: newUser.value.email,
+    status: 'active',
+    color: randomColor
+  })
+
+  showModal.value = false
+  newUser.value = { nama: '', email: '', role: 'Staff', departemen: 'IT', phone: '' }
+}
 </script>
 
 <template>
@@ -62,7 +93,7 @@ const getInitials = (name) => {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </button>
         </div>
-        <button class="btn-primary">
+        <button class="btn-primary" @click="showModal = true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
           New Contact
         </button>
@@ -154,6 +185,52 @@ const getInitials = (name) => {
     <div class="empty-state" v-if="filteredUsers.length === 0">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
       <p>Tidak ada user ditemukan</p>
+    </div>
+  </div>
+
+  <!-- Modal Tambah User -->
+  <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Tambah User Baru</h2>
+        <button class="close-btn" @click="showModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nama Lengkap</label>
+          <input v-model="newUser.nama" type="text" placeholder="Nama Lengkap" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input v-model="newUser.email" type="email" placeholder="email@company.com" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Role</label>
+            <input v-model="newUser.role" type="text" placeholder="Jabatan" />
+          </div>
+          <div class="form-group">
+            <label>Departemen</label>
+            <select v-model="newUser.departemen">
+              <option value="IT">IT</option>
+              <option value="HR">HR</option>
+              <option value="Finance">Finance</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Operations">Operations</option>
+              <option value="Procurement">Procurement</option>
+              <option value="Engineering">Engineering</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input v-model="newUser.phone" type="text" placeholder="+62 ..." />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" @click="showModal = false">Batal</button>
+        <button class="btn-primary" @click="addUser">Simpan User</button>
+      </div>
     </div>
   </div>
 </template>
@@ -553,5 +630,115 @@ tbody tr:last-child td { border-bottom: none; }
 
 @media (max-width: 480px) {
   .user-grid { grid-template-columns: 1fr; }
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #fff;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  animation: modalSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlide {
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f2f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #8b8fa3;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-btn:hover { color: #dc2626; }
+
+.modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #5a6070;
+}
+
+.form-group input,
+.form-group select {
+  padding: 10px 12px;
+  border: 1.5px solid #e8ecf1;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #1e3c72;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #f0f2f5;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>

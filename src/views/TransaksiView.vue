@@ -47,9 +47,44 @@ const summaryStats = computed(() => {
     masuk: all.filter(t => t.tipe === 'Masuk').length,
     keluar: all.filter(t => t.tipe === 'Keluar').length,
     dipinjam: all.filter(t => t.tipe === 'Dipinjam').length,
-    totalBarang: all.reduce((sum, t) => sum + t.jumlah, 0)
   }
 })
+
+const showModal = ref(false)
+
+const newTrx = ref({
+  nama: '',
+  tipe: 'Masuk',
+  jumlah: 1,
+  user: '',
+  departemen: 'IT',
+  catatan: ''
+})
+
+const addTransaction = () => {
+  if (!newTrx.value.nama || !newTrx.value.user) return
+
+  const date = new Date()
+  const dateStr = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+  const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+  
+  const idStr = (transactions.value.length + 1).toString().padStart(3, '0')
+
+  transactions.value.unshift({
+    id: `TRX-20260211-${idStr}`,
+    nama: newTrx.value.nama,
+    tipe: newTrx.value.tipe,
+    jumlah: newTrx.value.jumlah,
+    user: newTrx.value.user,
+    departemen: newTrx.value.departemen,
+    tanggal: dateStr,
+    waktu: timeStr,
+    catatan: newTrx.value.catatan
+  })
+
+  showModal.value = false
+  newTrx.value = { nama: '', tipe: 'Masuk', jumlah: 1, user: '', departemen: 'IT', catatan: '' }
+}
 </script>
 
 <template>
@@ -205,6 +240,68 @@ const summaryStats = computed(() => {
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Action Button -->
+  <button class="fab-btn" @click="showModal = true" title="Tambah Transaksi">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+  </button>
+
+  <!-- Modal Tambah Transaksi -->
+  <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Catat Transaksi Baru</h2>
+        <button class="close-btn" @click="showModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Tipe Transaksi</label>
+          <div class="type-selector">
+            <button 
+              class="type-btn" 
+              :class="{ active: newTrx.tipe === 'Masuk', 'type-masuk': newTrx.tipe === 'Masuk' }" 
+              @click="newTrx.tipe = 'Masuk'"
+            >Masuk</button>
+            <button 
+              class="type-btn" 
+              :class="{ active: newTrx.tipe === 'Keluar', 'type-keluar': newTrx.tipe === 'Keluar' }" 
+              @click="newTrx.tipe = 'Keluar'"
+            >Keluar</button>
+            <button 
+              class="type-btn" 
+              :class="{ active: newTrx.tipe === 'Dipinjam', 'type-dipinjam': newTrx.tipe === 'Dipinjam' }" 
+              @click="newTrx.tipe = 'Dipinjam'"
+            >Dipinjam</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nama Barang</label>
+          <input v-model="newTrx.nama" type="text" placeholder="Cari atau ketik nama barang" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Jumlah</label>
+            <input v-model.number="newTrx.jumlah" type="number" min="1" />
+          </div>
+          <div class="form-group">
+            <label>User / Peminjam</label>
+            <input v-model="newTrx.user" type="text" placeholder="Nama User" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Catatan</label>
+          <textarea v-model="newTrx.catatan" rows="3" placeholder="Keterangan transaksi..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" @click="showModal = false">Batal</button>
+        <button class="btn-primary" @click="addTransaction">Simpan Transaksi</button>
       </div>
     </div>
   </div>
@@ -690,5 +787,181 @@ tbody tr:last-child td { border-bottom: none; }
 
 @media (max-width: 480px) {
   .summary-grid { grid-template-columns: 1fr; }
+}
+
+/* FAB */
+.fab-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 15px rgba(30, 60, 114, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 900;
+}
+
+.fab-btn:hover {
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 8px 25px rgba(30, 60, 114, 0.5);
+}
+
+.fab-btn svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #fff;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  animation: modalSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlide {
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f2f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #8b8fa3;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-btn:hover { color: #dc2626; }
+
+.modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #5a6070;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 10px 12px;
+  border: 1.5px solid #e8ecf1;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group textarea { resize: vertical; }
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #1e3c72;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.type-selector {
+  display: flex;
+  gap: 8px;
+  background: #f5f6fa;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.type-btn {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #8b8fa3;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.type-btn.active {
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  font-weight: 600;
+}
+
+.type-btn.active.type-masuk { color: #059669; border: 1px solid #ecfdf5; background: #ecfdf5; }
+.type-btn.active.type-keluar { color: #ea580c; border: 1px solid #fff7ed; background: #fff7ed; }
+.type-btn.active.type-dipinjam { color: #7c3aed; border: 1px solid #f5f3ff; background: #f5f3ff; }
+
+.modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #f0f2f5;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>

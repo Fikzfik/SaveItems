@@ -56,6 +56,33 @@ const totalNilai = computed(() => {
   const val = items.value.reduce((a, b) => a + (b.harga * b.stok), 0)
   return formatRupiah(val)
 })
+
+const newItem = ref({
+  nama: '',
+  kategori: 'Elektronik',
+  stok: 0,
+  lokasi: '',
+  harga: 0
+})
+
+const addItem = () => {
+  if (!newItem.value.nama || !newItem.value.stok) return
+  
+  const idStr = (items.value.length + 1).toString().padStart(3, '0')
+  items.value.unshift({
+    id: `INV-${idStr}`,
+    nama: newItem.value.nama,
+    kategori: newItem.value.kategori,
+    stok: newItem.value.stok,
+    tersedia: newItem.value.stok, // Asumsi awal tersedia semua
+    lokasi: newItem.value.lokasi || 'Gudang A',
+    kondisi: 'Baik',
+    harga: newItem.value.harga
+  })
+  
+  showModal.value = false
+  newItem.value = { nama: '', kategori: 'Elektronik', stok: 0, lokasi: '', harga: 0 }
+}
 </script>
 
 <template>
@@ -183,6 +210,48 @@ const totalNilai = computed(() => {
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Barang -->
+  <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Tambah Barang Baru</h2>
+        <button class="close-btn" @click="showModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nama Barang</label>
+          <input v-model="newItem.nama" type="text" placeholder="Contoh: Laptop Dell Latitude" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Kategori</label>
+            <select v-model="newItem.kategori">
+              <option v-for="cat in categories.filter(c => c !== 'Semua')" :key="cat" :value="cat">{{ cat }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Stok Awal</label>
+            <input v-model.number="newItem.stok" type="number" min="0" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Lokasi</label>
+            <input v-model="newItem.lokasi" type="text" placeholder="Contoh: Gudang A" />
+          </div>
+          <div class="form-group">
+            <label>Harga Satuan</label>
+            <input v-model.number="newItem.harga" type="number" min="0" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" @click="showModal = false">Batal</button>
+        <button class="btn-primary" @click="addItem">Simpan Barang</button>
       </div>
     </div>
   </div>
@@ -646,5 +715,115 @@ tbody tr:last-child td {
   .mini-stats {
     grid-template-columns: 1fr;
   }
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #fff;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  animation: modalSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlide {
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f2f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #8b8fa3;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.close-btn:hover { color: #dc2626; }
+
+.modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #5a6070;
+}
+
+.form-group input,
+.form-group select {
+  padding: 10px 12px;
+  border: 1.5px solid #e8ecf1;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #1e3c72;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #f0f2f5;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>
