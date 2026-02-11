@@ -1,0 +1,694 @@
+<script setup>
+import { ref, computed } from 'vue'
+
+const searchQuery = ref('')
+const selectedFilter = ref('Semua')
+
+const filters = ['Semua', 'Masuk', 'Keluar', 'Dipinjam']
+
+const transactions = ref([
+  { id: 'TRX-20260211-001', nama: 'Laptop Dell Latitude 5540', tipe: 'Masuk', jumlah: 15, user: 'Budi Santoso', departemen: 'IT', tanggal: '11 Feb 2026', waktu: '09:15', catatan: 'Pembelian unit baru batch Q1' },
+  { id: 'TRX-20260211-002', nama: 'Monitor LG 24" IPS', tipe: 'Keluar', jumlah: 5, user: 'Siti Rahayu', departemen: 'Marketing', tanggal: '11 Feb 2026', waktu: '10:30', catatan: 'Distribusi ke divisi marketing' },
+  { id: 'TRX-20260210-003', nama: 'Keyboard Mechanical Logitech', tipe: 'Dipinjam', jumlah: 3, user: 'Ahmad Fauzi', departemen: 'Engineering', tanggal: '10 Feb 2026', waktu: '14:20', catatan: 'Pinjaman sementara untuk event' },
+  { id: 'TRX-20260210-004', nama: 'Mouse Wireless Logitech M331', tipe: 'Masuk', jumlah: 50, user: 'Dewi Lestari', departemen: 'Procurement', tanggal: '10 Feb 2026', waktu: '11:45', catatan: 'Restok dari supplier' },
+  { id: 'TRX-20260209-005', nama: 'Printer HP LaserJet Pro', tipe: 'Keluar', jumlah: 2, user: 'Riko Pratama', departemen: 'Finance', tanggal: '09 Feb 2026', waktu: '16:00', catatan: 'Penempatan di lantai 3' },
+  { id: 'TRX-20260209-006', nama: 'Proyektor Epson EB-X51', tipe: 'Dipinjam', jumlah: 1, user: 'Rina Wati', departemen: 'HR', tanggal: '09 Feb 2026', waktu: '08:30', catatan: 'Pinjam untuk presentasi training' },
+  { id: 'TRX-20260208-007', nama: 'Kabel HDMI 2m', tipe: 'Masuk', jumlah: 100, user: 'Joko Widodo', departemen: 'IT', tanggal: '08 Feb 2026', waktu: '13:10', catatan: 'Pengadaan aksesoris rutin' },
+  { id: 'TRX-20260208-008', nama: 'UPS APC 1100VA', tipe: 'Keluar', jumlah: 8, user: 'Maya Sari', departemen: 'Operations', tanggal: '08 Feb 2026', waktu: '15:45', catatan: 'Distribusi ke server room' },
+  { id: 'TRX-20260207-009', nama: 'Kursi Ergonomic', tipe: 'Masuk', jumlah: 20, user: 'Andi Wijaya', departemen: 'Procurement', tanggal: '07 Feb 2026', waktu: '10:00', catatan: 'Pembelian furniture kantor baru' },
+  { id: 'TRX-20260207-010', nama: 'Switch TP-Link 24 Port', tipe: 'Keluar', jumlah: 3, user: 'Fajar Rahman', departemen: 'IT', tanggal: '07 Feb 2026', waktu: '11:30', catatan: 'Instalasi jaringan gedung B' },
+])
+
+const filteredTransactions = computed(() => {
+  return transactions.value.filter(t => {
+    const matchSearch = t.nama.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+                        t.id.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+                        t.user.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const matchFilter = selectedFilter.value === 'Semua' || t.tipe === selectedFilter.value
+    return matchSearch && matchFilter
+  })
+})
+
+const getStatusClass = (tipe) => {
+  switch (tipe) {
+    case 'Masuk': return 'status-masuk'
+    case 'Keluar': return 'status-keluar'
+    case 'Dipinjam': return 'status-dipinjam'
+    default: return ''
+  }
+}
+
+const getStatusIcon = (tipe) => tipe
+
+const summaryStats = computed(() => {
+  const all = transactions.value
+  return {
+    total: all.length,
+    masuk: all.filter(t => t.tipe === 'Masuk').length,
+    keluar: all.filter(t => t.tipe === 'Keluar').length,
+    dipinjam: all.filter(t => t.tipe === 'Dipinjam').length,
+    totalBarang: all.reduce((sum, t) => sum + t.jumlah, 0)
+  }
+})
+</script>
+
+<template>
+  <div class="transaksi-view">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1>Transaksi</h1>
+        <p class="page-subtitle">Riwayat semua transaksi barang masuk, keluar, dan dipinjam</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn-outline">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <button class="btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tambah Transaksi
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-icon icon-total">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </div>
+        <div class="summary-info">
+          <span class="summary-value">{{ summaryStats.total }}</span>
+          <span class="summary-label">Total Transaksi</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon icon-masuk">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12"/><polyline points="12 2 12 22"/><path d="M12 2l4 4-4 4"/><polyline points="2 12 8 12"/></svg>
+        </div>
+        <div class="summary-info">
+          <span class="summary-value">{{ summaryStats.masuk }}</span>
+          <span class="summary-label">Barang Masuk</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon icon-keluar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg>
+        </div>
+        <div class="summary-info">
+          <span class="summary-value">{{ summaryStats.keluar }}</span>
+          <span class="summary-label">Barang Keluar</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon icon-dipinjam">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="summary-info">
+          <span class="summary-value">{{ summaryStats.dipinjam }}</span>
+          <span class="summary-label">Dipinjam</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+      <div class="search-filter">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input v-model="searchQuery" type="text" placeholder="Cari transaksi, ID, atau user..." />
+      </div>
+      <div class="filter-tabs">
+        <button
+          v-for="f in filters"
+          :key="f"
+          class="tab-btn"
+          :class="{ active: selectedFilter === f }"
+          @click="selectedFilter = f"
+        >
+          {{ f }}
+          <span class="tab-count" v-if="f !== 'Semua'">
+            {{ f === 'Masuk' ? summaryStats.masuk : f === 'Keluar' ? summaryStats.keluar : summaryStats.dipinjam }}
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Transaction Table -->
+    <div class="table-section">
+      <div class="table-info">
+        <span class="result-count">{{ filteredTransactions.length }} transaksi</span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ID Transaksi</th>
+              <th>Nama Barang</th>
+              <th>Tipe</th>
+              <th>Jumlah</th>
+              <th>User</th>
+              <th>Departemen</th>
+              <th>Tanggal</th>
+              <th>Catatan</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="trx in filteredTransactions" :key="trx.id">
+              <td class="td-id">{{ trx.id }}</td>
+              <td class="td-nama">
+                <div class="item-name">
+                  <div class="item-dot" :class="getStatusClass(trx.tipe)"></div>
+                  <span>{{ trx.nama }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="status-badge" :class="getStatusClass(trx.tipe)">
+                  <span class="badge-dot"></span>
+                  {{ trx.tipe }}
+                </span>
+              </td>
+              <td class="td-jumlah">{{ trx.jumlah }}</td>
+              <td class="td-user">
+                <div class="user-cell">
+                  <div class="user-avatar">{{ trx.user.charAt(0) }}</div>
+                  <span>{{ trx.user }}</span>
+                </div>
+              </td>
+              <td class="td-dept">{{ trx.departemen }}</td>
+              <td class="td-tanggal">
+                <div class="date-cell">
+                  <span class="date-text">{{ trx.tanggal }}</span>
+                  <span class="time-text">{{ trx.waktu }}</span>
+                </div>
+              </td>
+              <td class="td-catatan">{{ trx.catatan }}</td>
+              <td>
+                <div class="action-btns">
+                  <button class="act-btn act-view" title="Detail">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                  <button class="act-btn act-delete" title="Hapus">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="filteredTransactions.length === 0">
+              <td colspan="9" class="empty-state">
+                <div class="empty-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                  <p>Tidak ada transaksi ditemukan</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.transaksi-view {
+  max-width: 1400px;
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.page-header h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  color: #8b8fa3;
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-outline,
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline {
+  background: #fff;
+  border: 1.5px solid #e0e3ea;
+  color: #5a6070;
+}
+
+.btn-outline:hover {
+  border-color: #1e3c72;
+  color: #1e3c72;
+  background: #f8faff;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(30, 60, 114, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(30, 60, 114, 0.4);
+}
+
+.btn-outline svg,
+.btn-primary svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Summary Grid */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-card {
+  background: #fff;
+  border: 1px solid #f0f2f5;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s;
+}
+
+.summary-card:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
+}
+
+.summary-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.icon-total { background: #eef2ff; color: #1e3c72; }
+.icon-masuk { background: #ecfdf5; color: #059669; }
+.icon-keluar { background: #fff7ed; color: #ea580c; }
+.icon-dipinjam { background: #f5f3ff; color: #7c3aed; }
+
+.summary-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-value {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1.2;
+}
+
+.summary-label {
+  font-size: 0.72rem;
+  color: #8b8fa3;
+  font-weight: 500;
+}
+
+/* Filters */
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.search-filter {
+  position: relative;
+  width: 320px;
+}
+
+.search-filter .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #b0b4c4;
+}
+
+.search-filter input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  border: 1.5px solid #e8ecf1;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: #333;
+  background: #fff;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.search-filter input:focus {
+  border-color: #1e3c72;
+  box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.08);
+}
+
+.search-filter input::placeholder { color: #b0b4c4; }
+
+.filter-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1.5px solid #e8ecf1;
+  border-radius: 10px;
+  background: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #5a6070;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  border-color: #1e3c72;
+  color: #1e3c72;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(30, 60, 114, 0.25);
+}
+
+.tab-count {
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.tab-btn.active .tab-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Table */
+.table-section {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #f0f2f5;
+  overflow: hidden;
+}
+
+.table-info {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.result-count {
+  font-size: 0.8rem;
+  color: #8b8fa3;
+  font-weight: 500;
+}
+
+.table-wrapper { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead { background: #f9fafb; }
+
+th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #8b8fa3;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+td {
+  padding: 14px 16px;
+  font-size: 0.84rem;
+  color: #3d4150;
+  border-bottom: 1px solid #f5f6fa;
+}
+
+tbody tr { transition: background 0.15s; }
+tbody tr:hover { background: #f9fafb; }
+tbody tr:last-child td { border-bottom: none; }
+
+.td-id {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 0.72rem;
+  color: #8b8fa3;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.td-nama { min-width: 200px; }
+
+.item-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.item-dot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  border-radius: 50%;
+}
+
+.item-dot.status-masuk { background: #059669; }
+.item-dot.status-keluar { background: #ea580c; }
+.item-dot.status-dipinjam { background: #7c3aed; }
+
+.td-jumlah {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* User Cell */
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 8px;
+  background: #eef2ff;
+  color: #1e3c72;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.td-user span {
+  color: #3d4150;
+  font-weight: 500;
+}
+
+.td-dept {
+  color: #8b8fa3;
+  font-size: 0.8rem;
+}
+
+/* Date Cell */
+.date-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.date-text {
+  font-size: 0.82rem;
+  color: #3d4150;
+  white-space: nowrap;
+}
+
+.time-text {
+  font-size: 0.7rem;
+  color: #b0b4c4;
+}
+
+.td-catatan {
+  max-width: 200px;
+  font-size: 0.78rem;
+  color: #8b8fa3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-masuk { background: #ecfdf5; color: #059669; }
+.status-keluar { background: #fff7ed; color: #ea580c; }
+.status-dipinjam { background: #f5f3ff; color: #7c3aed; }
+
+/* Action Buttons */
+.action-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.act-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.act-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.act-view {
+  background: #eef2ff;
+  color: #1e3c72;
+}
+
+.act-view:hover {
+  background: #1e3c72;
+  color: #fff;
+}
+
+.act-delete {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.act-delete:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px !important;
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #b0b4c4;
+}
+
+.empty-content svg {
+  width: 40px;
+  height: 40px;
+}
+
+.empty-content p {
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .page-header { flex-direction: column; }
+  .header-actions { width: 100%; }
+  .btn-outline, .btn-primary { flex: 1; justify-content: center; }
+  .summary-grid { grid-template-columns: 1fr 1fr; }
+  .filters-bar { flex-direction: column; align-items: stretch; }
+  .search-filter { width: 100%; }
+  .filter-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+  .tab-btn { white-space: nowrap; }
+}
+
+@media (max-width: 480px) {
+  .summary-grid { grid-template-columns: 1fr; }
+}
+</style>
