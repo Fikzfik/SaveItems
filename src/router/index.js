@@ -5,6 +5,11 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'Landing',
+      component: () => import('../views/LandingPage.vue')
+    },
+    {
+      path: '/login',
       name: 'Login',
       component: () => import('../components/Login.vue')
     },
@@ -16,27 +21,27 @@ const router = createRouter({
         {
           path: '',
           name: 'DashboardHome',
-          component: () => import('../views/DashboardView.vue')
+          component: () => import('../views/admin/DashboardView.vue')
         },
         {
           path: 'inventori',
           name: 'Inventori',
-          component: () => import('../views/InventoriView.vue')
+          component: () => import('../views/admin/InventoriView.vue')
         },
         {
           path: 'transaksi',
           name: 'Transaksi',
-          component: () => import('../views/TransaksiView.vue')
+          component: () => import('../views/admin/TransaksiView.vue')
         },
         {
           path: 'user',
           name: 'User',
-          component: () => import('../views/UserView.vue')
+          component: () => import('../views/admin/UserView.vue')
         },
         {
           path: 'laporan',
           name: 'Laporan',
-          component: () => import('../views/LaporanView.vue')
+          component: () => import('../views/admin/LaporanView.vue')
         }
       ]
     },

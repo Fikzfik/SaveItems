@@ -253,13 +253,13 @@ const addUser = () => {
 .page-header h1 {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0 0 4px;
   letter-spacing: -0.02em;
 }
 
 .page-subtitle {
-  color: #8b8fa3;
+  color: var(--text-muted);
   font-size: 0.88rem;
   margin: 0;
 }
@@ -272,7 +272,7 @@ const addUser = () => {
 
 .view-toggle {
   display: flex;
-  background: #f5f6fa;
+  background: var(--bg-input);
   border-radius: 10px;
   padding: 3px;
 }
@@ -287,7 +287,7 @@ const addUser = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8b8fa3;
+  color: var(--text-muted);
   transition: all 0.2s;
 }
 
@@ -297,9 +297,9 @@ const addUser = () => {
 }
 
 .toggle-btn.active {
-  background: #fff;
-  color: #1e3c72;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  background: var(--bg-surface);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); /* Keep shadow for active state depth */
 }
 
 .btn-primary {
@@ -344,28 +344,28 @@ const addUser = () => {
   transform: translateY(-50%);
   width: 16px;
   height: 16px;
-  color: #b0b4c4;
+  color: var(--text-label);
 }
 
 .search-bar input {
   width: 100%;
   padding: 11px 16px 11px 42px;
-  border: 1.5px solid #e8ecf1;
+  border: 1.5px solid var(--border-color);
   border-radius: 12px;
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
-  color: #333;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   outline: none;
   transition: all 0.2s;
 }
 
 .search-bar input:focus {
-  border-color: #1e3c72;
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.08);
 }
 
-.search-bar input::placeholder { color: #b0b4c4; }
+.search-bar input::placeholder { color: var(--text-label); }
 
 /* ====== GRID VIEW ====== */
 .user-grid {
@@ -375,8 +375,8 @@ const addUser = () => {
 }
 
 .user-card {
-  background: #fff;
-  border: 1px solid #f0f2f5;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 20px;
   display: flex;
@@ -389,7 +389,7 @@ const addUser = () => {
 .user-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.07);
-  border-color: #e0e3ea;
+  border-color: var(--border-color); /* Kept consistent */
 }
 
 .card-header {
@@ -426,7 +426,7 @@ const addUser = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #b0b4c4;
+  color: var(--text-label);
   transition: all 0.2s;
 }
 
@@ -436,8 +436,8 @@ const addUser = () => {
 }
 
 .card-menu:hover {
-  background: #f5f6fa;
-  color: #5a6070;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
 }
 
 .card-avatar {
@@ -458,23 +458,23 @@ const addUser = () => {
 .card-name {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0 0 2px;
   text-align: center;
 }
 
 .card-role {
   font-size: 0.78rem;
-  color: #5a6070;
+  color: var(--text-secondary);
   font-weight: 500;
   margin-bottom: 2px;
 }
 
 .card-dept {
   font-size: 0.7rem;
-  color: #b0b4c4;
+  color: var(--text-muted);
   font-weight: 500;
-  background: #f5f6fa;
+  background: var(--bg-input);
   padding: 2px 10px;
   border-radius: 6px;
 }
@@ -482,7 +482,7 @@ const addUser = () => {
 .card-divider {
   width: 100%;
   height: 1px;
-  background: #f0f2f5;
+  background: var(--border-light);
   margin: 14px 0;
 }
 
@@ -498,14 +498,14 @@ const addUser = () => {
   align-items: center;
   gap: 8px;
   font-size: 0.75rem;
-  color: #5a6070;
+  color: var(--text-secondary);
 }
 
 .contact-row svg {
   width: 14px;
   height: 14px;
   min-width: 14px;
-  color: #b0b4c4;
+  color: var(--text-label);
 }
 
 .contact-row span {
@@ -516,23 +516,23 @@ const addUser = () => {
 
 /* ====== LIST VIEW ====== */
 .table-section {
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 16px;
-  border: 1px solid #f0f2f5;
+  border: 1px solid var(--border-color);
   overflow: hidden;
 }
 
 .table-wrapper { overflow-x: auto; }
 
 table { width: 100%; border-collapse: collapse; }
-thead { background: #f9fafb; }
+thead { background: var(--bg-input); }
 
 th {
   text-align: left;
   padding: 12px 18px;
   font-size: 0.72rem;
   font-weight: 600;
-  color: #8b8fa3;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   white-space: nowrap;
@@ -541,12 +541,12 @@ th {
 td {
   padding: 14px 18px;
   font-size: 0.84rem;
-  color: #3d4150;
-  border-bottom: 1px solid #f5f6fa;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 tbody tr { transition: background 0.15s; }
-tbody tr:hover { background: #f9fafb; }
+tbody tr:hover { background: var(--bg-hover); }
 tbody tr:last-child td { border-bottom: none; }
 
 .list-user {
@@ -570,13 +570,13 @@ tbody tr:last-child td { border-bottom: none; }
 
 .list-name {
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
 }
 
-.td-role { color: #5a6070; }
-.td-dept { color: #8b8fa3; }
+.td-role { color: var(--text-secondary); }
+.td-dept { color: var(--text-muted); }
 .td-phone { white-space: nowrap; font-variant-numeric: tabular-nums; }
-.td-email { color: #1e3c72; font-size: 0.8rem; }
+.td-email { color: var(--accent); font-size: 0.8rem; }
 
 .status-pill {
   display: inline-flex;
@@ -587,7 +587,7 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .status-pill.active { background: #ecfdf5; color: #059669; }
-.status-pill.inactive { background: #f5f6fa; color: #8b8fa3; }
+.status-pill.inactive { background: var(--bg-input); color: var(--text-muted); }
 
 .action-btns { display: flex; gap: 6px; }
 
@@ -604,10 +604,26 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .act-btn svg { width: 15px; height: 15px; }
-.act-edit { background: #eef2ff; color: #1e3c72; }
-.act-edit:hover { background: #1e3c72; color: #fff; }
-.act-delete { background: #fef2f2; color: #dc2626; }
-.act-delete:hover { background: #dc2626; color: #fff; }
+
+.act-edit {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.act-edit:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.act-delete {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.act-delete:hover {
+  background: var(--danger);
+  color: #fff;
+}
 
 /* Empty State */
 .empty-state {
@@ -616,7 +632,7 @@ tbody tr:last-child td { border-bottom: none; }
   align-items: center;
   gap: 8px;
   padding: 60px 20px;
-  color: #b0b4c4;
+  color: var(--text-muted);
 }
 
 .empty-state svg { width: 48px; height: 48px; }
@@ -649,7 +665,7 @@ tbody tr:last-child td { border-bottom: none; }
 }
 
 .modal-content {
-  background: #fff;
+  background: var(--bg-surface);
   width: 100%;
   max-width: 500px;
   border-radius: 16px;
@@ -666,7 +682,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 .modal-header {
   padding: 20px 24px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -675,7 +691,7 @@ tbody tr:last-child td { border-bottom: none; }
 .modal-header h2 {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -683,14 +699,14 @@ tbody tr:last-child td { border-bottom: none; }
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: #8b8fa3;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0;
   line-height: 1;
   transition: color 0.2s;
 }
 
-.close-btn:hover { color: #dc2626; }
+.close-btn:hover { color: var(--danger); }
 
 .modal-body {
   padding: 24px;
@@ -708,24 +724,25 @@ tbody tr:last-child td { border-bottom: none; }
 .form-group label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #5a6070;
+  color: var(--text-secondary);
 }
 
 .form-group input,
 .form-group select {
   padding: 10px 12px;
-  border: 1.5px solid #e8ecf1;
+  border: 1.5px solid var(--border-color);
   border-radius: 10px;
   font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--text-primary);
+  background: var(--bg-input);
   outline: none;
   transition: border-color 0.2s;
 }
 
 .form-group input:focus,
 .form-group select:focus {
-  border-color: #1e3c72;
+  border-color: var(--accent);
 }
 
 .form-row {
@@ -736,7 +753,7 @@ tbody tr:last-child td { border-bottom: none; }
 
 .modal-footer {
   padding: 20px 24px;
-  border-top: 1px solid #f0f2f5;
+  border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: flex-end;
   gap: 12px;

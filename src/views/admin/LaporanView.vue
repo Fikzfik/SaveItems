@@ -264,13 +264,13 @@ const getTrendIcon = (trend) => trend
 .page-header h1 {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0 0 4px;
   letter-spacing: -0.02em;
 }
 
 .page-subtitle {
-  color: #8b8fa3;
+  color: var(--text-muted);
   font-size: 0.88rem;
   margin: 0;
 }
@@ -295,15 +295,15 @@ const getTrendIcon = (trend) => trend
 }
 
 .btn-outline {
-  background: #fff;
-  border: 1.5px solid #e0e3ea;
-  color: #5a6070;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-color);
+  color: var(--text-secondary);
 }
 
 .btn-outline:hover {
-  border-color: #1e3c72;
-  color: #1e3c72;
-  background: #f8faff;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg-hover);
 }
 
 .btn-primary {
@@ -341,19 +341,19 @@ const getTrendIcon = (trend) => trend
 .filter-group label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #5a6070;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .filter-select {
   padding: 10px 14px;
-  border: 1.5px solid #e8ecf1;
+  border: 1.5px solid var(--border-color);
   border-radius: 10px;
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
-  color: #333;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   cursor: pointer;
   outline: none;
   transition: all 0.2s;
@@ -361,7 +361,7 @@ const getTrendIcon = (trend) => trend
 }
 
 .filter-select:focus {
-  border-color: #1e3c72;
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.08);
 }
 
@@ -374,13 +374,13 @@ const getTrendIcon = (trend) => trend
 }
 
 .summary-card {
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 16px;
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  border: 1px solid #f0f2f5;
+  border: 1px solid var(--border-color);
   transition: all 0.2s;
 }
 
@@ -419,14 +419,14 @@ const getTrendIcon = (trend) => trend
 .summary-value {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--text-primary);
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
 
 .summary-label {
   font-size: 0.78rem;
-  color: #8b8fa3;
+  color: var(--text-muted);
   font-weight: 500;
   margin-top: 2px;
 }
@@ -449,8 +449,8 @@ const getTrendIcon = (trend) => trend
 }
 
 .chart-card {
-  background: #fff;
-  border: 1px solid #f0f2f5;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 20px;
 }
@@ -465,7 +465,7 @@ const getTrendIcon = (trend) => trend
 .chart-header h3 {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -479,7 +479,7 @@ const getTrendIcon = (trend) => trend
   align-items: center;
   gap: 6px;
   font-size: 0.75rem;
-  color: #5a6070;
+  color: var(--text-secondary);
 }
 
 .legend-dot {
@@ -536,7 +536,7 @@ const getTrendIcon = (trend) => trend
 
 .bar-label {
   font-size: 0.7rem;
-  color: #8b8fa3;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -562,18 +562,18 @@ const getTrendIcon = (trend) => trend
 .category-name {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
 }
 
 .category-value {
   font-size: 0.72rem;
-  color: #8b8fa3;
+  color: var(--text-muted);
 }
 
 .progress-bar {
   flex: 1;
   height: 10px;
-  background: #f0f2f5;
+  background: var(--bg-input);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -588,7 +588,7 @@ const getTrendIcon = (trend) => trend
 .category-percent {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #1e3c72;
+  color: var(--accent);
   min-width: 40px;
   text-align: right;
 }
@@ -601,35 +601,35 @@ const getTrendIcon = (trend) => trend
 }
 
 .table-card {
-  background: #fff;
-  border: 1px solid #f0f2f5;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   overflow: hidden;
 }
 
 .table-header {
   padding: 16px 20px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .table-header h3 {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .table-wrapper { overflow-x: auto; }
 
 table { width: 100%; border-collapse: collapse; }
-thead { background: #f9fafb; }
+thead { background: var(--bg-input); }
 
 th {
   text-align: left;
   padding: 10px 16px;
   font-size: 0.7rem;
   font-weight: 600;
-  color: #8b8fa3;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -637,21 +637,21 @@ th {
 td {
   padding: 12px 16px;
   font-size: 0.82rem;
-  color: #3d4150;
-  border-bottom: 1px solid #f5f6fa;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 tbody tr { transition: background 0.15s; }
-tbody tr:hover { background: #f9fafb; }
+tbody tr:hover { background: var(--bg-hover); }
 tbody tr:last-child td { border-bottom: none; }
 
-.td-kategori { font-weight: 600; color: #1a1a2e; }
+.td-kategori { font-weight: 600; color: var(--text-primary); }
 .td-number { font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
 .td-masuk { color: #059669; }
 .td-keluar { color: #ea580c; }
-.td-nilai { font-weight: 700; color: #1e3c72; white-space: nowrap; }
+.td-nilai { font-weight: 700; color: var(--accent); white-space: nowrap; }
 .td-nama { font-weight: 500; }
-.td-transaksi { color: #1e3c72; }
+.td-transaksi { color: var(--accent); }
 
 .cat-badge {
   display: inline-flex;
@@ -659,8 +659,8 @@ tbody tr:last-child td { border-bottom: none; }
   border-radius: 8px;
   font-size: 0.7rem;
   font-weight: 500;
-  background: #f0f2f5;
-  color: #5a6070;
+  background: var(--bg-input);
+  color: var(--text-secondary);
 }
 
 .trend-badge {
@@ -675,7 +675,7 @@ tbody tr:last-child td { border-bottom: none; }
 .trend-badge svg { width: 12px; height: 12px; }
 .trend-up { background: #ecfdf5; color: #059669; }
 .trend-down { background: #fef2f2; color: #dc2626; }
-.trend-same { background: #f5f6fa; color: #8b8fa3; }
+.trend-same { background: var(--bg-input); color: var(--text-muted); }
 
 /* Responsive */
 @media (max-width: 1200px) {

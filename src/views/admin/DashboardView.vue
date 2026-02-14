@@ -177,13 +177,13 @@ const getStatusClass = (tipe) => {
 .page-header h1 {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0 0 4px 0;
   letter-spacing: -0.02em;
 }
 
 .page-subtitle {
-  color: #8b8fa3;
+  color: var(--text-muted);
   font-size: 0.88rem;
   margin: 0;
 }
@@ -208,15 +208,15 @@ const getStatusClass = (tipe) => {
 }
 
 .btn-outline {
-  background: #fff;
-  border: 1.5px solid #e0e3ea;
-  color: #5a6070;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-color);
+  color: var(--text-secondary);
 }
 
 .btn-outline:hover {
-  border-color: #1e3c72;
-  color: #1e3c72;
-  background: #f8faff;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg-hover);
 }
 
 .btn-primary {
@@ -246,13 +246,13 @@ const getStatusClass = (tipe) => {
 }
 
 .stat-card {
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 16px;
   padding: 22px;
   display: flex;
   align-items: flex-start;
   gap: 16px;
-  border: 1px solid #f0f2f5;
+  border: 1px solid var(--border-color);
   transition: all 0.25s ease;
   position: relative;
   overflow: hidden;
@@ -308,14 +308,14 @@ const getStatusClass = (tipe) => {
 .stat-value {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--text-primary);
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
 
 .stat-label {
   font-size: 0.78rem;
-  color: #8b8fa3;
+  color: var(--text-muted);
   font-weight: 500;
   margin-top: 2px;
 }
@@ -350,9 +350,9 @@ const getStatusClass = (tipe) => {
 
 /* ====== TABLE SECTION ====== */
 .table-section {
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 16px;
-  border: 1px solid #f0f2f5;
+  border: 1px solid var(--border-color);
   overflow: hidden;
 }
 
@@ -361,18 +361,18 @@ const getStatusClass = (tipe) => {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .table-header h2 {
   font-size: 1rem;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .view-all {
-  color: #1e3c72;
+  color: var(--accent);
   font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
@@ -380,7 +380,7 @@ const getStatusClass = (tipe) => {
 }
 
 .view-all:hover {
-  color: #2a5298;
+  color: var(--accent-light);
 }
 
 .table-wrapper {
@@ -393,7 +393,7 @@ table {
 }
 
 thead {
-  background: #f9fafb;
+  background: var(--bg-input);
 }
 
 th {
@@ -401,7 +401,7 @@ th {
   padding: 12px 20px;
   font-size: 0.72rem;
   font-weight: 600;
-  color: #8b8fa3;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   white-space: nowrap;
@@ -410,8 +410,8 @@ th {
 td {
   padding: 14px 20px;
   font-size: 0.85rem;
-  color: #3d4150;
-  border-bottom: 1px solid #f5f6fa;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 tbody tr {
@@ -419,7 +419,7 @@ tbody tr {
 }
 
 tbody tr:hover {
-  background: #f9fafb;
+  background: var(--bg-hover);
 }
 
 tbody tr:last-child td {
@@ -427,7 +427,7 @@ tbody tr:last-child td {
 }
 
 .td-no {
-  color: #b0b4c4;
+  color: var(--text-label);
   font-weight: 500;
   width: 50px;
 }
@@ -441,7 +441,7 @@ tbody tr:last-child td {
   align-items: center;
   gap: 10px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
 }
 
 .item-avatar {
@@ -461,11 +461,11 @@ tbody tr:last-child td {
 }
 
 .td-user {
-  color: #5a6070;
+  color: var(--text-secondary);
 }
 
 .td-tanggal {
-  color: #8b8fa3;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 

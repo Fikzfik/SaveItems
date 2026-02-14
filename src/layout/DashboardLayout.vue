@@ -6,6 +6,7 @@ const router = useRouter()
 const route = useRoute()
 const isSidebarOpen = ref(true)
 const isMobileSidebarOpen = ref(false)
+const isDarkMode = ref(false)
 
 const menuItems = [
   { icon: 'dashboard', label: 'Dashboard', path: '/dashboard', badge: null },
@@ -32,13 +33,18 @@ const toggleMobileSidebar = () => {
   isMobileSidebarOpen.value = !isMobileSidebarOpen.value
 }
 
+const toggleDarkMode = () => {
+  isDarkMode.value = !isDarkMode.value
+  document.documentElement.setAttribute('data-theme', isDarkMode.value ? 'dark' : 'light')
+}
+
 const handleLogout = () => {
   router.push('/')
 }
 </script>
 
 <template>
-  <div class="dashboard-wrapper">
+  <div class="dashboard-wrapper" :class="{ 'dark-mode': isDarkMode }">
     <!-- Mobile Overlay -->
     <div
       class="mobile-overlay"
@@ -164,6 +170,18 @@ const handleLogout = () => {
           </div>
         </div>
         <div class="navbar-right">
+          <button class="nav-btn dark-toggle" @click="toggleDarkMode" :title="isDarkMode ? 'Light Mode' : 'Dark Mode'">
+            <svg v-if="!isDarkMode" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          </button>
           <button class="nav-btn" title="Notifications">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -200,18 +218,63 @@ const handleLogout = () => {
   box-sizing: border-box;
 }
 
+/* ====== CSS VARIABLES ====== */
 .dashboard-wrapper {
+  --bg-primary: #f0f2f5;
+  --bg-surface: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-hover: #f0f4ff;
+  --bg-active: linear-gradient(135deg, #1e3c72, #2a5298);
+  --bg-input: #f9fafb;
+  --border-color: #e8ecf1;
+  --border-light: #f0f2f5;
+  --text-primary: #1a1a2e;
+  --text-secondary: #5a6070;
+  --text-muted: #8b8fa3;
+  --text-label: #b0b4c4;
+  --accent: #1e3c72;
+  --accent-light: #2a5298;
+  --accent-bg: #eef2ff;
+  --danger: #ef4444;
+  --danger-bg: #fef2f2;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 15px rgba(0,0,0,0.06);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
   display: flex;
   min-height: 100vh;
-  background: #f0f2f5;
+  background: var(--bg-primary);
   font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ====== DARK MODE ====== */
+.dashboard-wrapper.dark-mode {
+  --bg-primary: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-sidebar: #1e293b;
+  --bg-hover: #334155;
+  --bg-input: #334155;
+  --border-color: #334155;
+  --border-light: #2d3a4e;
+  --text-primary: #ffffff;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-label: #cbd5e1;
+  --accent-bg: #1e3a5f;
+  --danger-bg: #3b1c1c;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 15px rgba(0,0,0,0.3);
 }
 
 /* ====== SIDEBAR ====== */
 .sidebar {
   width: 260px;
-  background: #fff;
-  border-right: 1px solid #e8ecf1;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -233,7 +296,7 @@ const handleLogout = () => {
   align-items: center;
   gap: 12px;
   padding: 24px 20px 20px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--border-light);
   margin-bottom: 8px;
 }
 
@@ -255,7 +318,7 @@ const handleLogout = () => {
 .logo-text {
   font-size: 1.15rem;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--text-primary);
   letter-spacing: -0.02em;
   white-space: nowrap;
 }
@@ -264,7 +327,7 @@ const handleLogout = () => {
   padding: 16px 24px 8px;
   font-size: 0.68rem;
   font-weight: 600;
-  color: #b0b4c4;
+  color: var(--text-label);
   letter-spacing: 0.1em;
   white-space: nowrap;
 }
@@ -286,19 +349,19 @@ const handleLogout = () => {
   margin-bottom: 2px;
   text-decoration: none;
   position: relative;
-  color: #5a6070;
+  color: var(--text-secondary);
   font-size: 0.88rem;
   font-weight: 500;
   white-space: nowrap;
 }
 
 .nav-item:hover {
-  background: #f0f4ff;
-  color: #1e3c72;
+  background: var(--bg-hover);
+  color: var(--accent);
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: var(--bg-active);
   color: #fff;
   box-shadow: 0 4px 15px rgba(30, 60, 114, 0.3);
 }
@@ -328,7 +391,7 @@ const handleLogout = () => {
 
 .nav-badge {
   margin-left: auto;
-  background: #ef4444;
+  background: var(--danger);
   color: #fff;
   font-size: 0.65rem;
   font-weight: 700;
@@ -348,7 +411,7 @@ const handleLogout = () => {
 }
 
 .promo-card {
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: var(--bg-active);
   border-radius: 16px;
   padding: 20px 16px;
   color: #fff;
@@ -376,20 +439,20 @@ const handleLogout = () => {
 /* Sidebar Footer */
 .sidebar-footer {
   padding: 8px 12px 16px;
-  border-top: 1px solid #f0f2f5;
+  border-top: 1px solid var(--border-light);
 }
 
 .logout-item {
-  color: #ef4444 !important;
+  color: var(--danger) !important;
 }
 
 .logout-item:hover {
-  background: #fef2f2 !important;
+  background: var(--danger-bg) !important;
   color: #dc2626 !important;
 }
 
 .logout-item .nav-icon svg {
-  stroke: #ef4444;
+  stroke: var(--danger);
 }
 
 /* ====== MAIN AREA ====== */
@@ -406,8 +469,8 @@ const handleLogout = () => {
 
 /* ====== NAVBAR ====== */
 .navbar {
-  background: #fff;
-  border-bottom: 1px solid #e8ecf1;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-color);
   padding: 0 28px;
   height: 68px;
   display: flex;
@@ -428,18 +491,18 @@ const handleLogout = () => {
   width: 38px;
   height: 38px;
   border: none;
-  background: #f5f6fa;
+  background: var(--bg-input);
   border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  color: #5a6070;
+  color: var(--text-secondary);
 }
 
 .hamburger:hover {
-  background: #e8ecf1;
+  background: var(--border-color);
 }
 
 .hamburger svg {
@@ -463,30 +526,30 @@ const handleLogout = () => {
   transform: translateY(-50%);
   width: 16px;
   height: 16px;
-  color: #b0b4c4;
+  color: var(--text-label);
 }
 
 .search-box input {
   width: 100%;
   padding: 10px 14px 10px 38px;
-  border: 1.5px solid #e8ecf1;
+  border: 1.5px solid var(--border-color);
   border-radius: 12px;
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
-  color: #333;
-  background: #f9fafb;
+  color: var(--text-primary);
+  background: var(--bg-input);
   outline: none;
   transition: all 0.2s;
 }
 
 .search-box input:focus {
-  border-color: #1e3c72;
-  background: #fff;
+  border-color: var(--accent);
+  background: var(--bg-surface);
   box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.08);
 }
 
 .search-box input::placeholder {
-  color: #b0b4c4;
+  color: var(--text-label);
 }
 
 .navbar-right {
@@ -499,19 +562,19 @@ const handleLogout = () => {
   width: 40px;
   height: 40px;
   border: none;
-  background: #f5f6fa;
+  background: var(--bg-input);
   border-radius: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #5a6070;
+  color: var(--text-secondary);
   transition: all 0.2s;
   position: relative;
 }
 
 .nav-btn:hover {
-  background: #e8ecf1;
+  background: var(--border-color);
 }
 
 .nav-btn svg {
@@ -525,9 +588,13 @@ const handleLogout = () => {
   right: 10px;
   width: 8px;
   height: 8px;
-  background: #ef4444;
+  background: var(--danger);
   border-radius: 50%;
   border: 2px solid #fff;
+}
+
+.dark-mode .notif-dot {
+  border-color: var(--bg-input);
 }
 
 .user-profile {
@@ -535,14 +602,14 @@ const handleLogout = () => {
   align-items: center;
   gap: 10px;
   padding: 6px 12px 6px 6px;
-  background: #f9fafb;
+  background: var(--bg-input);
   border-radius: 14px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .user-profile:hover {
-  background: #f0f2f5;
+  background: var(--bg-hover);
 }
 
 .user-avatar {
@@ -566,13 +633,13 @@ const handleLogout = () => {
 .user-name {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   line-height: 1.2;
 }
 
 .user-role {
   font-size: 0.68rem;
-  color: #8b8fa3;
+  color: var(--text-muted);
   font-weight: 400;
 }
 

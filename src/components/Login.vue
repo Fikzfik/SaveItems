@@ -5,18 +5,14 @@ import bgImage from '@/assets/images/login-bg.png'
 
 const router = useRouter()
 const isSignUp = ref(false)
-const selectedRole = ref('admin')
 
 const toggleMode = () => {
   isSignUp.value = !isSignUp.value
 }
 
 const handleSignIn = () => {
-  if (selectedRole.value === 'superadmin') {
-    router.push('/superadmin')
-  } else {
-    router.push('/dashboard')
-  }
+  // Role-based routing will be handled by middleware after authentication
+  router.push('/dashboard')
 }
 </script>
 
@@ -101,22 +97,6 @@ const handleSignIn = () => {
           <label for="signin-pass">Password</label>
         </div>
 
-        <!-- Role Selector -->
-        <div class="role-selector">
-          <span class="role-label">Login as:</span>
-          <div class="role-options">
-            <label class="role-option" :class="{ active: selectedRole === 'admin' }">
-              <input type="radio" v-model="selectedRole" value="admin" />
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <span>Admin</span>
-            </label>
-            <label class="role-option" :class="{ active: selectedRole === 'superadmin' }">
-              <input type="radio" v-model="selectedRole" value="superadmin" />
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15l-2-4h4l-2 4z"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <span>Super Admin</span>
-            </label>
-          </div>
-        </div>
 
         <div class="form-actions">
           <label class="remember-me">
@@ -521,81 +501,6 @@ const handleSignIn = () => {
   text-decoration: underline;
 }
 
-/* ====== ROLE SELECTOR ====== */
-.role-selector {
-  width: 100%;
-  max-width: 300px;
-  margin: 6px 0 2px;
-}
-
-.role-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #8b8fa3;
-  display: block;
-  margin-bottom: 6px;
-  text-align: left;
-  letter-spacing: 0.03em;
-}
-
-.role-options {
-  display: flex;
-  gap: 8px;
-  width: 100%;
-}
-
-.role-option {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1.5px solid #e8eaf0;
-  background: #f5f6fa;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  font-family: 'Inter', sans-serif;
-}
-
-.role-option input[type="radio"] {
-  display: none;
-}
-
-.role-option svg {
-  width: 16px;
-  height: 16px;
-  color: #b0b4c4;
-  transition: color 0.25s;
-}
-
-.role-option span {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: #8b8fa3;
-  transition: color 0.25s;
-}
-
-.role-option:hover {
-  border-color: #c5cad8;
-  background: #eef0f5;
-}
-
-.role-option.active {
-  border-color: #1e3c72;
-  background: linear-gradient(135deg, rgba(30,60,114,0.06), rgba(42,82,152,0.04));
-  box-shadow: 0 2px 8px rgba(30,60,114,0.1);
-}
-
-.role-option.active svg {
-  color: #1e3c72;
-}
-
-.role-option.active span {
-  color: #1e3c72;
-  font-weight: 600;
-}
 
 /* ====== BUTTONS — Colored Shadow (Blue Glow) ====== */
 button.btn {
