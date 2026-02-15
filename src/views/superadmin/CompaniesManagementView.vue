@@ -6,8 +6,28 @@ const filterStatus = ref('all')
 const filterPlan = ref('all')
 const showAddModal = ref(false)
 const showDetailModal = ref(false)
+const showConfirmModal = ref(false)
 const selectedCompany = ref(null)
 const activeTab = ref('overview')
+const isEditing = ref(false)
+
+// Confirmation State
+const confirmState = ref({
+  title: '',
+  message: '',
+  type: 'danger', // danger, warning, success
+  action: null
+})
+
+// Form Data
+const form = ref({
+  id: null,
+  name: '',
+  email: '',
+  plan: 'Starter',
+  maxUsers: 10,
+  status: 'Active'
+})
 
 const companies = ref([
   { id: 1, logo: 'MJ', name: 'PT Maju Jaya', email: 'admin@majujaya.com', status: 'Active', plan: 'Enterprise', maxUsers: 100, storageUsed: 72, storageMax: 100, subEnd: '2027-02-14', lastLogin: '2 hours ago', totalItems: 1234, totalTransactions: 456 },
@@ -22,15 +42,25 @@ const companies = ref([
 
 const filteredCompanies = computed(() => {
   return companies.value.filter(c => {
+    // If filterStatus is 'Deleted', showing only deleted companies
+    // If filterStatus is NOT 'Deleted', hide deleted companies unless specifically asked (logic below)
+    
+    const isDeleted = c.status === 'Deleted'
+    const showDeleted = filterStatus.value === 'Deleted'
+
+    if (showDeleted && !isDeleted) return false
+    if (!showDeleted && isDeleted) return false
+
     const matchSearch = c.name.toLowerCase().includes(searchQuery.value.toLowerCase()) || c.email.toLowerCase().includes(searchQuery.value.toLowerCase())
     const matchStatus = filterStatus.value === 'all' || c.status === filterStatus.value
     const matchPlan = filterPlan.value === 'all' || c.plan === filterPlan.value
+    
     return matchSearch && matchStatus && matchPlan
   })
 })
 
 const getStatusClass = (status) => {
-  const map = { Active: 'status-active', Trial: 'status-trial', Suspended: 'status-suspended', Expired: 'status-expired' }
+  const map = { Active: 'status-active', Trial: 'status-trial', Suspended: 'status-suspended', Expired: 'status-expired', Deleted: 'status-deleted' }
   return map[status] || ''
 }
 
@@ -45,6 +75,91 @@ const viewDetail = (company) => {
   selectedCompany.value = company
   showDetailModal.value = true
   activeTab.value = 'overview'
+}
+
+const openAddModal = () => {
+  isEditing.value = false
+  form.value = { id: null, name: '', email: '', plan: 'Starter', maxUsers: 10, status: 'Active' }
+  showAddModal.value = true
+}
+
+const openEditModal = (company) => {
+  isEditing.value = true
+  form.value = { ...company }
+  showAddModal.value = true
+}
+
+const saveCompany = () => {
+  if (isEditing.value) {
+    const index = companies.value.findIndex(c => c.id === form.value.id)
+    if (index !== -1) {
+      companies.value[index] = { ...companies.value[index], ...form.value }
+    }
+  } else {
+    const newId = Math.max(...companies.value.map(c => c.id)) + 1
+    const logo = form.value.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    companies.value.push({
+      id: newId,
+      logo,
+      ...form.value,
+      storageUsed: 0,
+      storageMax: form.value.plan === 'Enterprise' ? 100 : (form.value.plan === 'Professional' ? 50 : 10),
+      subEnd: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+      lastLogin: 'Never',
+      totalItems: 0,
+      totalTransactions: 0
+    })
+  }
+  showAddModal.value = false
+}
+
+const openConfirmModal = (title, message, type, action) => {
+  confirmState.value = { title, message, type, action }
+  showConfirmModal.value = true
+}
+
+const executeConfirm = () => {
+  if (confirmState.value.action) {
+    confirmState.value.action()
+  }
+  showConfirmModal.value = false
+}
+
+const toggleSuspend = (company) => {
+  const newStatus = company.status === 'Suspended' ? 'Active' : 'Suspended'
+  openConfirmModal(
+    newStatus === 'Suspended' ? 'Suspend Company' : 'Activate Company',
+    `Are you sure you want to ${newStatus === 'Suspended' ? 'suspend' : 'activate'} <strong>${company.name}</strong>?`,
+    newStatus === 'Suspended' ? 'warning' : 'success',
+    () => { company.status = newStatus }
+  )
+}
+
+const deleteCompany = (company) => {
+  openConfirmModal(
+    'Delete Company',
+    `Are you sure you want to delete <strong>${company.name}</strong>? It will be moved to the Deleted list.`,
+    'danger',
+    () => { company.status = 'Deleted' }
+  )
+}
+
+const restoreCompany = (company) => {
+  openConfirmModal(
+    'Restore Company',
+    `Are you sure you want to restore <strong>${company.name}</strong>? It will become Active again.`,
+    'success',
+    () => { company.status = 'Active' }
+  )
+}
+
+const permanentDelete = (company) => {
+  openConfirmModal(
+    'Permanently Delete',
+    `Are you sure you want to <strong style="color:var(--error)">PERMANENTLY DELETE ${company.name}</strong>? This action <strong>CANNOT</strong> be undone.`,
+    'danger',
+    () => { companies.value = companies.value.filter(c => c.id !== company.id) }
+  )
 }
 
 const exportCSV = () => {
@@ -73,7 +188,7 @@ const exportCSV = () => {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export CSV
         </button>
-        <button class="sa-btn-primary" @click="showAddModal = true">
+        <button class="sa-btn-primary" @click="openAddModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
           Add Company
         </button>
@@ -92,6 +207,7 @@ const exportCSV = () => {
         <option value="Trial">Trial</option>
         <option value="Suspended">Suspended</option>
         <option value="Expired">Expired</option>
+        <option value="Deleted">Deleted</option>
       </select>
       <select v-model="filterPlan" class="sa-select">
         <option value="all">All Plans</option>
@@ -145,15 +261,30 @@ const exportCSV = () => {
                   <button class="sa-action-btn" title="View Detail" @click="viewDetail(c)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   </button>
-                  <button class="sa-action-btn" title="Edit">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </button>
-                  <button class="sa-action-btn warning" title="Suspend">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>
-                  </button>
-                  <button class="sa-action-btn danger" title="Delete">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                  </button>
+                  
+                  <!-- Normal Actions -->
+                  <template v-if="c.status !== 'Deleted'">
+                    <button class="sa-action-btn" title="Edit" @click="openEditModal(c)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="sa-action-btn warning" :title="c.status === 'Suspended' ? 'Activate' : 'Suspend'" @click="toggleSuspend(c)">
+                      <svg v-if="c.status === 'Suspended'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>
+                    </button>
+                    <button class="sa-action-btn danger" title="Delete" @click="deleteCompany(c)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                  </template>
+
+                  <!-- Deleted Actions -->
+                  <template v-else>
+                    <button class="sa-action-btn success" title="Restore" @click="restoreCompany(c)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                    </button>
+                    <button class="sa-action-btn danger" title="Permanent Delete" @click="permanentDelete(c)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </template>
                 </div>
               </td>
             </tr>
@@ -283,11 +414,11 @@ const exportCSV = () => {
       </div>
     </div>
 
-    <!-- Add Company Modal -->
+    <!-- Add/Edit Company Modal -->
     <div class="sa-modal-overlay" v-if="showAddModal" @click.self="showAddModal = false">
       <div class="sa-modal sa-modal-sm">
         <div class="sa-modal-header">
-          <h2>Add New Company</h2>
+          <h2>{{ isEditing ? 'Edit Company' : 'Add New Company' }}</h2>
           <button class="sa-modal-close" @click="showAddModal = false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -295,16 +426,16 @@ const exportCSV = () => {
         <div class="sa-modal-body">
           <div class="sa-form-group">
             <label>Company Name</label>
-            <input type="text" placeholder="Enter company name" class="sa-input" />
+            <input type="text" v-model="form.name" placeholder="Enter company name" class="sa-input" />
           </div>
           <div class="sa-form-group">
             <label>Email</label>
-            <input type="email" placeholder="admin@company.com" class="sa-input" />
+            <input type="email" v-model="form.email" placeholder="admin@company.com" class="sa-input" />
           </div>
           <div class="sa-form-row">
             <div class="sa-form-group">
               <label>Plan</label>
-              <select class="sa-input">
+              <select v-model="form.plan" class="sa-input">
                 <option>Starter</option>
                 <option>Professional</option>
                 <option>Enterprise</option>
@@ -312,12 +443,35 @@ const exportCSV = () => {
             </div>
             <div class="sa-form-group">
               <label>Max Users</label>
-              <input type="number" placeholder="10" class="sa-input" />
+              <input type="number" v-model="form.maxUsers" placeholder="10" class="sa-input" />
             </div>
           </div>
           <div class="sa-form-actions">
             <button class="sa-btn-outline" @click="showAddModal = false">Cancel</button>
-            <button class="sa-btn-primary" @click="showAddModal = false">Create Company</button>
+            <button class="sa-btn-primary" @click="saveCompany">{{ isEditing ? 'Save Changes' : 'Create Company' }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="sa-modal-overlay" v-if="showConfirmModal" @click.self="showConfirmModal = false">
+      <div class="sa-modal sa-modal-xs">
+        <div class="sa-modal-header">
+          <h2>{{ confirmState.title }}</h2>
+          <button class="sa-modal-close" @click="showConfirmModal = false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="sa-modal-body">
+          <p class="sa-confirm-msg" v-html="confirmState.message"></p>
+          <div class="sa-form-actions">
+            <button class="sa-btn-outline" @click="showConfirmModal = false">Cancel</button>
+            <button class="sa-btn-primary" 
+              :class="{ 'danger-btn': confirmState.type === 'danger', 'warning-btn': confirmState.type === 'warning', 'success-btn': confirmState.type === 'success' }" 
+              @click="executeConfirm">
+              Confirm
+            </button>
           </div>
         </div>
       </div>
@@ -425,6 +579,7 @@ tbody tr:last-child td { border-bottom: none; }
 .sa-action-btn:hover { background: var(--accent-bg, #eef2ff); color: var(--accent, #1e3c72); }
 .sa-action-btn.warning:hover { background: #fff7ed; color: #ea580c; }
 .sa-action-btn.danger:hover { background: #fef2f2; color: #dc2626; }
+.sa-action-btn.success:hover { background: #ecfdf5; color: #059669; }
 .sa-action-btn svg { width: 14px; height: 14px; }
 
 /* Modal */
@@ -442,6 +597,7 @@ tbody tr:last-child td { border-bottom: none; }
   animation: slideUp 0.2s ease;
 }
 .sa-modal-sm { width: 480px; }
+.sa-modal-xs { width: 400px; }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 .sa-modal-header {
@@ -460,6 +616,14 @@ tbody tr:last-child td { border-bottom: none; }
 .sa-modal-close svg { width: 16px; height: 16px; }
 
 .sa-modal-body { padding: 20px 24px; }
+.sa-confirm-msg { margin: 0 0 20px; font-size: 0.9rem; color: var(--text-secondary, #5a6070); line-height: 1.5; }
+
+.danger-btn { background: #dc2626 !important; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3) !important; }
+.danger-btn:hover { background: #b91c1c !important; }
+.warning-btn { background: #ea580c !important; box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3) !important; }
+.warning-btn:hover { background: #c2410c !important; }
+.success-btn { background: #059669 !important; box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3) !important; }
+.success-btn:hover { background: #047857 !important; }
 
 /* Tabs */
 .sa-tabs {
@@ -519,6 +683,8 @@ tbody tr:last-child td { border-bottom: none; }
 .sa-input:focus { border-color: var(--accent, #1e3c72); background: var(--bg-surface, #fff); box-shadow: 0 0 0 3px rgba(30,60,114,0.08); }
 .sa-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .sa-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+
+.status-deleted { background: #f1f5f9; color: #64748b; text-decoration: line-through; }
 
 @media (max-width: 768px) {
   .sa-page-header { flex-direction: column; }
