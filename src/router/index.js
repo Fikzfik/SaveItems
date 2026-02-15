@@ -14,6 +14,26 @@ const router = createRouter({
       component: () => import('../components/Login.vue')
     },
     {
+      path: '/verify-otp',
+      name: 'VerifyOtp',
+      component: () => import('../views/auth/VerifyOtpView.vue')
+    },
+    {
+      path: '/onboarding',
+      name: 'Onboarding',
+      component: () => import('../views/auth/OnboardingView.vue')
+    },
+    {
+      path: '/home',
+      name: 'UserHome',
+      component: () => import('../views/UserHomeView.vue')
+    },
+    {
+      path: '/subscribe',
+      name: 'Subscribe',
+      component: () => import('../views/SubscriptionView.vue')
+    },
+    {
       path: '/dashboard',
       name: 'Dashboard',
       component: () => import('../layout/DashboardLayout.vue'),

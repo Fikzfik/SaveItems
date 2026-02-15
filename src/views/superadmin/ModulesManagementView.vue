@@ -45,7 +45,7 @@ const toggleModule = (mod) => { mod.enabled = !mod.enabled; if (mod.enabled) mod
     <div class="sa-module-grid">
       <div class="sa-module-card" v-for="mod in modules" :key="mod.id" :class="{ 'is-disabled': !mod.enabled }">
         <div class="sa-module-top">
-          <div class="sa-module-icon" :style="{ background: mod.color + '15', color: mod.color }">
+          <div class="sa-module-icon" :style="{ '--mod-color': mod.color }">
             <svg v-if="mod.icon === 'inventory'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
             <svg v-else-if="mod.icon === 'hr'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             <svg v-else-if="mod.icon === 'finance'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -102,10 +102,20 @@ const toggleModule = (mod) => { mod.enabled = !mod.enabled; if (mod.enabled) mod
 
 .sa-module-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
 
+
 .sa-module-icon {
   width: 48px; height: 48px; border-radius: 12px; display: flex;
   align-items: center; justify-content: center;
+  /* Use CSS variable for color */
+  color: var(--mod-color);
+  background: color-mix(in srgb, var(--mod-color), transparent 85%);
 }
+/* Dark mode override for better visibility */
+:global(.dark-mode) .sa-module-icon {
+  color: color-mix(in srgb, var(--mod-color), white 50%);
+  background: color-mix(in srgb, var(--mod-color), transparent 90%);
+}
+
 .sa-module-icon svg { width: 24px; height: 24px; }
 
 .sa-installed-badge {
@@ -114,25 +124,25 @@ const toggleModule = (mod) => { mod.enabled = !mod.enabled; if (mod.enabled) mod
 }
 
 .sa-module-name {
-  font-size: 0.95rem; font-weight: 700; color: var(--text-primary, #1a1a2e);
+  font-size: 0.95rem; font-weight: 700; color: var(--text-primary);
   margin: 0 0 6px;
 }
 
 .sa-module-desc {
-  font-size: 0.78rem; color: var(--text-muted, #8b8fa3); line-height: 1.5;
+  font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;
   margin: 0 0 16px; flex: 1;
 }
 
 .sa-module-footer {
   display: flex; align-items: center; gap: 10px;
-  padding-top: 14px; border-top: 1px solid var(--border-light, #f0f2f5);
+  padding-top: 14px; border-top: 1px solid var(--border-light);
 }
 
 .sa-toggle { position: relative; display: inline-block; width: 40px; height: 22px; }
 .sa-toggle input { opacity: 0; width: 0; height: 0; }
 .sa-toggle-slider {
   position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-  background: var(--border-color, #e0e3ea); transition: 0.3s; border-radius: 22px;
+  background: var(--border-color); transition: 0.3s; border-radius: 22px;
 }
 .sa-toggle-slider:before {
   position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
@@ -141,7 +151,7 @@ const toggleModule = (mod) => { mod.enabled = !mod.enabled; if (mod.enabled) mod
 .sa-toggle input:checked + .sa-toggle-slider { background: #1e3c72; }
 .sa-toggle input:checked + .sa-toggle-slider:before { transform: translateX(18px); }
 
-.sa-toggle-label { font-size: 0.78rem; font-weight: 500; color: var(--text-muted, #8b8fa3); }
+.sa-toggle-label { font-size: 0.78rem; font-weight: 500; color: var(--text-muted); }
 
 @media (max-width: 1024px) { .sa-module-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .sa-module-grid { grid-template-columns: 1fr; } .sa-module-stats { flex-direction: column; } }

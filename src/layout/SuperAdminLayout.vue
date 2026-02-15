@@ -441,6 +441,8 @@ onBeforeUnmount(() => {
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
   --shadow-md: 0 4px 15px rgba(0,0,0,0.3);
   --shadow-lg: 0 8px 25px rgba(0,0,0,0.4);
+  --accent: #60a5fa; /* Lighter blue for dark mode */
+  --accent-light: #93c5fd;
 }
 
 /* ====== SIDEBAR ====== */

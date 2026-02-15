@@ -11,8 +11,13 @@ const toggleMode = () => {
 }
 
 const handleSignIn = () => {
-  // Role-based routing will be handled by middleware after authentication
-  router.push('/dashboard')
+  // After login, go to user home (landing-style with subscription options)
+  router.push('/home')
+}
+
+const handleSignUp = () => {
+  // After registration, redirect to OTP verification
+  router.push('/verify-otp')
 }
 </script>
 
@@ -58,7 +63,7 @@ const handleSignIn = () => {
           <label for="signup-pass">Password</label>
         </div>
 
-        <button class="btn btn-primary" @click="toggleMode">Sign Up</button>
+        <button class="btn btn-primary" @click="handleSignUp">Sign Up</button>
         <p class="mobile-toggle">
           Already have an account? <span @click="toggleMode">Sign In</span>
         </p>
