@@ -41,6 +41,21 @@ const router = createRouter({
         {
           path: '',
           name: 'DashboardHome',
+          component: () => import('../views/admin/MyAppsView.vue')
+        },
+        {
+          path: 'modules',
+          name: 'ModulesList',
+          component: () => import('../views/admin/ModulesListView.vue')
+        },
+        {
+          path: 'settings',
+          name: 'CompanySettings',
+          component: () => import('../views/admin/CompanySettingsView.vue')
+        },
+        {
+          path: 'overview',
+          name: 'DashboardOverview',
           component: () => import('../views/admin/DashboardView.vue')
         },
         {
