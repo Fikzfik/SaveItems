@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const currentStep = ref(1) // 1 = pick plan, 2 = pick modules
+const currentStep = ref(1) // 1 = pick plan, 2 = pick modules, 3 = payment
 
 const plans = [
   { id: 'starter', name: 'Starter', price: 'Rp 199K', period: '/bulan', maxModules: 2, desc: 'Untuk bisnis kecil', features: ['2 modul pilihan', '3 user', '5.000 item', 'Email support'] },
@@ -60,8 +60,14 @@ const activateSubscription = () => {
   if (selectedModules.value.length === 0) return
   isActivating.value = true
   setTimeout(() => {
-    router.push('/dashboard')
-  }, 2000)
+    router.push({
+      path: '/payment',
+      query: {
+        plan: selectedPlan.value,
+        modules: selectedModules.value.join(',')
+      }
+    })
+  }, 1500)
 }
 
 const goBack = () => router.push('/home')
@@ -84,6 +90,8 @@ const goBack = () => router.push('/home')
           <span class="ssi" :class="{ active: currentStep >= 1 }">1</span>
           <span class="ssi-line" :class="{ active: currentStep >= 2 }"></span>
           <span class="ssi" :class="{ active: currentStep >= 2 }">2</span>
+          <span class="ssi-line"></span>
+          <span class="ssi">3</span>
         </div>
       </div>
     </header>
@@ -92,7 +100,7 @@ const goBack = () => router.push('/home')
     <main v-if="currentStep === 1" class="sub-main">
       <div class="sub-inner">
         <div class="sub-section-head">
-          <span class="sub-step-badge">Langkah 1 dari 2</span>
+          <span class="sub-step-badge">Langkah 1 dari 3</span>
           <h1>Pilih paket langganan Anda</h1>
           <p>Semua paket termasuk trial 14 hari gratis. Upgrade atau downgrade kapan saja.</p>
         </div>
@@ -136,7 +144,7 @@ const goBack = () => router.push('/home')
     <main v-else class="sub-main">
       <div class="sub-inner">
         <div class="sub-section-head">
-          <span class="sub-step-badge">Langkah 2 dari 2</span>
+          <span class="sub-step-badge">Langkah 2 dari 3</span>
           <h1>Pilih modul untuk diaktifkan</h1>
           <p>
             Paket <strong>{{ currentPlan?.name }}</strong> —
