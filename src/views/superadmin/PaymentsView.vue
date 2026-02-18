@@ -5,21 +5,21 @@ const searchQuery = ref('')
 const filterStatus = ref('all')
 
 const payments = ref([
-  { id: 'INV-2026-001', company: 'PT Maju Jaya', logo: 'MJ', amount: '$299.00', plan: 'Enterprise', status: 'Paid', method: 'Credit Card', date: '2026-02-01', dueDate: '2026-02-14' },
-  { id: 'INV-2026-002', company: 'CV Berkah Sentosa', logo: 'BS', amount: '$149.00', plan: 'Professional', status: 'Paid', method: 'Bank Transfer', date: '2026-02-05', dueDate: '2026-02-20' },
-  { id: 'INV-2026-003', company: 'PT Sinar Abadi', logo: 'SA', amount: '$49.00', plan: 'Starter', status: 'Pending', method: 'Credit Card', date: '2026-02-10', dueDate: '2026-02-25' },
-  { id: 'INV-2026-004', company: 'PT Harapan Baru', logo: 'HB', amount: '$299.00', plan: 'Enterprise', status: 'Paid', method: 'PayPal', date: '2026-01-15', dueDate: '2026-01-30' },
-  { id: 'INV-2026-005', company: 'PT Indo Teknologi', logo: 'IT', amount: '$149.00', plan: 'Professional', status: 'Overdue', method: 'Bank Transfer', date: '2026-01-01', dueDate: '2026-01-15' },
-  { id: 'INV-2026-006', company: 'CV Sinar Pagi', logo: 'SP', amount: '$49.00', plan: 'Starter', status: 'Paid', method: 'Credit Card', date: '2026-02-08', dueDate: '2026-02-22' },
-  { id: 'INV-2026-007', company: 'PT Nusa Prima', logo: 'NP', amount: '$299.00', plan: 'Enterprise', status: 'Paid', method: 'Bank Transfer', date: '2026-02-12', dueDate: '2026-02-26' },
-  { id: 'INV-2025-008', company: 'CV Karya Mandiri', logo: 'KM', amount: '$49.00', plan: 'Starter', status: 'Failed', method: 'Credit Card', date: '2025-12-20', dueDate: '2026-01-05' },
+  { id: 'INV-2026-001', company: 'PT Maju Jaya', logo: 'MJ', amount: 'Rp 10.000.000', plan: 'Yearly', status: 'Paid', method: 'Credit Card', date: '2026-02-01', dueDate: '2026-02-14' },
+  { id: 'INV-2026-002', company: 'CV Berkah Sentosa', logo: 'BS', amount: 'Rp 999.000', plan: 'Monthly', status: 'Paid', method: 'Bank Transfer', date: '2026-02-05', dueDate: '2026-02-20' },
+  { id: 'INV-2026-003', company: 'PT Sinar Abadi', logo: 'SA', amount: 'Rp 999.000', plan: 'Monthly', status: 'Pending', method: 'Credit Card', date: '2026-02-10', dueDate: '2026-02-25' },
+  { id: 'INV-2026-004', company: 'PT Harapan Baru', logo: 'HB', amount: 'Rp 10.000.000', plan: 'Yearly', status: 'Paid', method: 'PayPal', date: '2026-01-15', dueDate: '2026-01-30' },
+  { id: 'INV-2026-005', company: 'PT Indo Teknologi', logo: 'IT', amount: 'Rp 999.000', plan: 'Monthly', status: 'Overdue', method: 'Bank Transfer', date: '2026-01-01', dueDate: '2026-01-15' },
+  { id: 'INV-2026-006', company: 'CV Sinar Pagi', logo: 'SP', amount: 'Rp 999.000', plan: 'Monthly', status: 'Paid', method: 'Credit Card', date: '2026-02-08', dueDate: '2026-02-22' },
+  { id: 'INV-2026-007', company: 'PT Nusa Prima', logo: 'NP', amount: 'Rp 10.000.000', plan: 'Yearly', status: 'Paid', method: 'Bank Transfer', date: '2026-02-12', dueDate: '2026-02-26' },
+  { id: 'INV-2025-008', company: 'CV Karya Mandiri', logo: 'KM', amount: 'Rp 999.000', plan: 'Monthly', status: 'Failed', method: 'Credit Card', date: '2025-12-20', dueDate: '2026-01-05' },
 ])
 
 const summaryStats = [
-  { label: 'Total Revenue', value: '$48,290', color: '#059669', bgColor: '#ecfdf5' },
-  { label: 'Pending', value: '$347', color: '#ea580c', bgColor: '#fff7ed' },
-  { label: 'Overdue', value: '$149', color: '#dc2626', bgColor: '#fef2f2' },
-  { label: 'This Month', value: '$1,193', color: '#1e3c72', bgColor: '#eef2ff' },
+  { label: 'Total Revenue', value: 'Rp 450.000.000', color: '#059669', bgColor: '#ecfdf5' },
+  { label: 'Pending', value: 'Rp 2.500.000', color: '#ea580c', bgColor: '#fff7ed' },
+  { label: 'Overdue', value: 'Rp 999.000', color: '#dc2626', bgColor: '#fef2f2' },
+  { label: 'This Month', value: 'Rp 25.000.000', color: '#1e3c72', bgColor: '#eef2ff' },
 ]
 
 const filtered = computed(() => {
@@ -72,7 +72,7 @@ const getStatusClass = (s) => ({ Paid: 'pay-paid', Pending: 'pay-pending', Overd
             <tr>
               <th>Invoice</th>
               <th>Company</th>
-              <th>Plan</th>
+              <th>Billing Cycle</th>
               <th>Amount</th>
               <th>Method</th>
               <th>Status</th>
@@ -149,9 +149,8 @@ tbody tr:last-child td { border-bottom: none; }
 .sa-company-avatar { width: 30px; height: 30px; min-width: 30px; border-radius: 8px; background: linear-gradient(135deg, #1e3c72, #2a5298); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.6rem; font-weight: 700; }
 .sa-company-name-cell { font-weight: 600; color: var(--text-primary, #1a1a2e); font-size: 0.83rem; white-space: nowrap; }
 .sa-plan-badge { display: inline-flex; padding: 3px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
-.plan-enterprise { background: #eef2ff; color: #1e3c72; }
-.plan-professional { background: #f5f3ff; color: #7c3aed; }
-.plan-starter { background: #ecfdf5; color: #059669; }
+.plan-yearly { background: #eef2ff; color: #1e3c72; }
+.plan-monthly { background: #f5f3ff; color: #7c3aed; }
 
 .sa-td-amount { font-weight: 700; color: var(--text-primary, #1a1a2e); white-space: nowrap; }
 .sa-td-method { white-space: nowrap; }

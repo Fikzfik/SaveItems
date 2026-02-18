@@ -6,32 +6,25 @@ const router = useRouter()
 
 // Simulated subscription data
 const subscription = ref({
-  plan: 'Professional',
-  maxModules: 5
+  plan: 'All Access',
 })
 
 const activeModules = ref([
   { id: 1, name: 'Inventory', desc: 'Kelola stok, gudang, dan aset perusahaan secara real-time.', icon: 'inventory', color: '#1e3c72', path: '/dashboard/inventori', stats: '2,847 barang' },
+  { id: 2, name: 'HR & Payroll', desc: 'Manajemen karyawan, absensi, dan penggajian otomatis.', icon: 'hr', color: '#7c3aed', path: '/dashboard', stats: '24 karyawan' },
   { id: 3, name: 'Akuntansi', desc: 'Pembukuan, laporan keuangan, dan manajemen invoice.', icon: 'finance', color: '#059669', path: '/dashboard', stats: '142 invoice' },
+  { id: 4, name: 'CRM', desc: 'Kelola pelanggan, pipeline penjualan, dan marketing.', icon: 'crm', color: '#ea580c', path: '/dashboard', stats: '38 leads aktif' },
   { id: 5, name: 'Point of Sale', desc: 'Kasir digital, transaksi cepat, dan laporan penjualan.', icon: 'pos', color: '#0ea5e9', path: '/dashboard', stats: '89 transaksi hari ini' },
+  { id: 6, name: 'Project', desc: 'Task board, milestone, timeline, dan resource planning.', icon: 'project', color: '#8b5cf6', path: '/dashboard', stats: '15 task aktif' },
+  { id: 7, name: 'E-Commerce', desc: 'Toko online, katalog produk, dan manajemen pesanan.', icon: 'ecommerce', color: '#f59e0b', path: '/dashboard', stats: '7 pesanan baru' },
+  { id: 8, name: 'Helpdesk', desc: 'Tiket support, SLA tracking, dan knowledge base.', icon: 'helpdesk', color: '#06b6d4', path: '/dashboard', stats: '12 tiket terbuka' },
+  { id: 9, name: 'Manufacturing', desc: 'Bill of Materials, work order, dan quality control.', icon: 'manufacturing', color: '#dc2626', path: '/dashboard', stats: '5 work order' },
 ])
 
-const inactiveModules = ref([
-  { id: 2, name: 'HR & Payroll', desc: 'Manajemen karyawan, absensi, dan penggajian otomatis.', icon: 'hr', color: '#7c3aed' },
-  { id: 4, name: 'CRM', desc: 'Kelola pelanggan, pipeline penjualan, dan marketing.', icon: 'crm', color: '#ea580c' },
-  { id: 6, name: 'Project', desc: 'Task board, milestone, timeline, dan resource planning.', icon: 'project', color: '#8b5cf6' },
-  { id: 7, name: 'E-Commerce', desc: 'Toko online, katalog produk, dan manajemen pesanan.', icon: 'ecommerce', color: '#f59e0b' },
-  { id: 8, name: 'Helpdesk', desc: 'Tiket support, SLA tracking, dan knowledge base.', icon: 'helpdesk', color: '#06b6d4' },
-  { id: 9, name: 'Manufacturing', desc: 'Bill of Materials, work order, dan quality control.', icon: 'manufacturing', color: '#dc2626' },
-])
-
-const canAddMore = computed(() => activeModules.value.length < subscription.value.maxModules)
 const searchQuery = ref('')
 const filteredActive = computed(() => activeModules.value.filter(m => m.name.toLowerCase().includes(searchQuery.value.toLowerCase())))
-const filteredInactive = computed(() => inactiveModules.value.filter(m => m.name.toLowerCase().includes(searchQuery.value.toLowerCase())))
 
 const goModule = (mod) => router.push(mod.path)
-const goSubscribe = () => router.push('/subscribe')
 </script>
 
 <template>
@@ -47,16 +40,12 @@ const goSubscribe = () => router.push('/subscribe')
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" v-model="searchQuery" placeholder="Cari modul..." />
         </div>
-        <button class="mv-btn-add" @click="goSubscribe" v-if="canAddMore">+ Tambah Modul</button>
       </div>
     </div>
 
-    <!-- Slot usage -->
+    <!-- All Access banner -->
     <div class="mv-slot-bar">
-      <div class="mvs-progress">
-        <div class="mvs-fill" :style="{ width: (activeModules.length / subscription.maxModules * 100) + '%' }"></div>
-      </div>
-      <span class="mvs-text">{{ activeModules.length }} / {{ subscription.maxModules }} slot modul digunakan</span>
+      <span class="mvs-text">✦ All Access · {{ activeModules.length }} modul aktif</span>
       <span class="mvs-plan">Paket {{ subscription.plan }}</span>
     </div>
 
@@ -88,33 +77,6 @@ const goSubscribe = () => router.push('/subscribe')
           <div class="mvc-footer">
             <span class="mvc-stats">{{ mod.stats }}</span>
             <span class="mvc-open">Buka →</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Inactive / Available Modules -->
-    <div class="mv-section">
-      <h2 class="mv-section-title">
-        <span class="mvst-dot inactive"></span> Modul Tersedia ({{ filteredInactive.length }})
-      </h2>
-      <div class="mv-grid">
-        <div class="mv-card inactive" v-for="mod in filteredInactive" :key="mod.id" :style="{ '--mc': mod.color }">
-          <div class="mvc-top">
-            <div class="mvc-icon">
-              <svg v-if="mod.icon==='hr'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <svg v-else-if="mod.icon==='crm'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              <svg v-else-if="mod.icon==='project'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-              <svg v-else-if="mod.icon==='ecommerce'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-              <svg v-else-if="mod.icon==='helpdesk'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            </div>
-            <div class="mvc-status inactive">Belum aktif</div>
-          </div>
-          <h3>{{ mod.name }}</h3>
-          <p class="mvc-desc">{{ mod.desc }}</p>
-          <div class="mvc-footer">
-            <button class="mvc-activate" @click="goSubscribe">Aktifkan Modul</button>
           </div>
         </div>
       </div>

@@ -6,29 +6,14 @@ const router = useRouter()
 const route = useRoute()
 
 // Data dari query params
-const planId = ref(route.query.plan || 'professional')
-const moduleIds = ref(route.query.modules ? route.query.modules.split(',').map(Number) : [])
+const planId = ref(route.query.plan || 'monthly')
 
 const plans = {
-  starter: { name: 'Starter', price: 199000, priceLabel: 'Rp 199.000', period: '/bulan', color: '#059669' },
-  professional: { name: 'Professional', price: 499000, priceLabel: 'Rp 499.000', period: '/bulan', color: '#7c3aed' },
-  enterprise: { name: 'Enterprise', price: 999000, priceLabel: 'Rp 999.000', period: '/bulan', color: '#1e3c72' },
+  monthly: { name: 'All Access', price: 999000, priceLabel: 'Rp 999.000', period: '/bulan', periodLabel: 'Bulanan', color: '#1e3c72' },
+  yearly: { name: 'All Access', price: 10000000, priceLabel: 'Rp 10.000.000', period: '/tahun', periodLabel: 'Tahunan', color: '#1e3c72' },
 }
 
-const allModules = [
-  { id: 1, name: 'Inventory', icon: '📦' },
-  { id: 2, name: 'HR & Payroll', icon: '👥' },
-  { id: 3, name: 'Akuntansi', icon: '💰' },
-  { id: 4, name: 'CRM', icon: '❤️' },
-  { id: 5, name: 'Point of Sale', icon: '🖥️' },
-  { id: 6, name: 'Project', icon: '📋' },
-  { id: 7, name: 'E-Commerce', icon: '🛒' },
-  { id: 8, name: 'Helpdesk', icon: '💬' },
-  { id: 9, name: 'Manufacturing', icon: '⚙️' },
-]
-
-const currentPlan = computed(() => plans[planId.value] || plans.professional)
-const selectedModules = computed(() => allModules.filter(m => moduleIds.value.includes(m.id)))
+const currentPlan = computed(() => plans[planId.value] || plans.monthly)
 
 // Payment method
 const paymentMethod = ref('card')
@@ -138,9 +123,7 @@ onMounted(() => {
         <div class="pay-steps-indicator">
           <span class="psi active">1</span>
           <span class="psi-line active"></span>
-          <span class="psi active">2</span>
-          <span class="psi-line active"></span>
-          <span class="psi active accent">3</span>
+          <span class="psi active accent">2</span>
         </div>
       </div>
     </header>
@@ -163,9 +146,9 @@ onMounted(() => {
     <main class="pay-main">
       <div class="pay-inner">
         <div class="pay-section-head">
-          <span class="pay-step-badge">Langkah 3 dari 3</span>
+          <span class="pay-step-badge">Langkah 2 dari 2</span>
           <h1>Selesaikan pembayaran</h1>
-          <p>Pilih metode pembayaran dan selesaikan langganan Anda</p>
+          <p>Pilih metode pembayaran dan selesaikan langganan All Access Anda</p>
         </div>
 
         <div class="pay-grid">
@@ -418,20 +401,17 @@ onMounted(() => {
                 </div>
                 <div class="psc-plan-info">
                   <span class="psc-plan-name">{{ currentPlan.name }}</span>
-                  <span class="psc-plan-period">Bulanan</span>
+                  <span class="psc-plan-period">{{ currentPlan.periodLabel }}</span>
                 </div>
                 <span class="psc-plan-price">{{ currentPlan.priceLabel }}</span>
               </div>
 
-              <!-- Modules -->
-              <div class="psc-modules" v-if="selectedModules.length > 0">
-                <div class="psc-modules-label">Modul Aktif ({{ selectedModules.length }})</div>
-                <div class="psc-module-list">
-                  <div class="psc-module-item" v-for="m in selectedModules" :key="m.id">
-                    <span class="psc-mod-icon">{{ m.icon }}</span>
-                    <span class="psc-mod-name">{{ m.name }}</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" class="psc-mod-check"><polyline points="20 6 9 17 4 12"/></svg>
-                  </div>
+              <!-- All Access Badge -->
+              <div class="psc-all-access">
+                <div class="psc-aa-icon">✦</div>
+                <div class="psc-aa-info">
+                  <strong>All Access</strong>
+                  <span>Semua 9 modul termasuk</span>
                 </div>
               </div>
 
@@ -670,6 +650,12 @@ onMounted(() => {
 .psc-mod-icon { font-size: 0.88rem; }
 .psc-mod-name { flex: 1; font-size: 0.82rem; font-weight: 600; color: #3d4150; }
 .psc-mod-check { width: 14px; height: 14px; flex-shrink: 0; }
+
+.psc-all-access { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-radius: 12px; margin-bottom: 20px; color: #fff; }
+.psc-aa-icon { font-size: 1.2rem; width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.psc-aa-info { display: flex; flex-direction: column; gap: 1px; }
+.psc-aa-info strong { font-size: 0.85rem; font-weight: 700; }
+.psc-aa-info span { font-size: 0.72rem; opacity: 0.85; }
 
 .psc-pricing { padding-top: 16px; border-top: 1px solid #f0f2f5; margin-bottom: 20px; }
 .psc-price-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 0.85rem; color: #5a6070; }

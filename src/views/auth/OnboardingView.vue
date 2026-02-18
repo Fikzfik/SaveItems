@@ -5,41 +5,24 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const apps = [
-  { id: 1, name: 'Inventory', desc: 'Kelola stok, gudang, dan aset perusahaan.', icon: 'inventory', color: '#1e3c72', selected: false },
-  { id: 2, name: 'HR & Payroll', desc: 'Karyawan, absensi, dan penggajian.', icon: 'hr', color: '#7c3aed', selected: false },
-  { id: 3, name: 'Akuntansi', desc: 'Pembukuan dan laporan keuangan.', icon: 'finance', color: '#059669', selected: false },
-  { id: 4, name: 'CRM', desc: 'Pelanggan dan pipeline penjualan.', icon: 'crm', color: '#ea580c', selected: false },
-  { id: 5, name: 'Point of Sale', desc: 'Kasir digital dan laporan penjualan.', icon: 'pos', color: '#0ea5e9', selected: false },
-  { id: 6, name: 'Project', desc: 'Task board dan resource planning.', icon: 'project', color: '#8b5cf6', selected: false },
-  { id: 7, name: 'E-Commerce', desc: 'Toko online dan manajemen pesanan.', icon: 'ecommerce', color: '#f59e0b', selected: false },
-  { id: 8, name: 'Helpdesk', desc: 'Tiket support dan knowledge base.', icon: 'helpdesk', color: '#06b6d4', selected: false },
-  { id: 9, name: 'Manufacturing', desc: 'Bill of Materials dan quality control.', icon: 'manufacturing', color: '#dc2626', selected: false },
+  { id: 1, name: 'Inventory', desc: 'Kelola stok, gudang, dan aset perusahaan.', icon: 'inventory', color: '#1e3c72' },
+  { id: 2, name: 'HR & Payroll', desc: 'Karyawan, absensi, dan penggajian.', icon: 'hr', color: '#7c3aed' },
+  { id: 3, name: 'Akuntansi', desc: 'Pembukuan dan laporan keuangan.', icon: 'finance', color: '#059669' },
+  { id: 4, name: 'CRM', desc: 'Pelanggan dan pipeline penjualan.', icon: 'crm', color: '#ea580c' },
+  { id: 5, name: 'Point of Sale', desc: 'Kasir digital dan laporan penjualan.', icon: 'pos', color: '#0ea5e9' },
+  { id: 6, name: 'Project', desc: 'Task board dan resource planning.', icon: 'project', color: '#8b5cf6' },
+  { id: 7, name: 'E-Commerce', desc: 'Toko online dan manajemen pesanan.', icon: 'ecommerce', color: '#f59e0b' },
+  { id: 8, name: 'Helpdesk', desc: 'Tiket support dan knowledge base.', icon: 'helpdesk', color: '#06b6d4' },
+  { id: 9, name: 'Manufacturing', desc: 'Bill of Materials dan quality control.', icon: 'manufacturing', color: '#dc2626' },
 ]
 
-const selectedApps = ref([])
-const isInstalling = ref(false)
+const isLoading = ref(false)
 
-const toggleApp = (app) => {
-  const index = selectedApps.value.indexOf(app.id)
-  if (index > -1) {
-    selectedApps.value.splice(index, 1)
-  } else {
-    selectedApps.value.push(app.id)
-  }
-}
-
-const isSelected = (id) => selectedApps.value.includes(id)
-
-const installApps = () => {
-  if (selectedApps.value.length === 0) return
-  isInstalling.value = true
+const goToDashboard = () => {
+  isLoading.value = true
   setTimeout(() => {
     router.push('/dashboard')
-  }, 2000)
-}
-
-const skipOnboarding = () => {
-  router.push('/dashboard')
+  }, 1500)
 }
 </script>
 
@@ -52,7 +35,6 @@ const skipOnboarding = () => {
           <img src="@/assets/images/logo.png" alt="Fisy" class="ob-logo" />
           <span class="ob-logo-text">Fisy</span>
         </div>
-        <button class="ob-skip" @click="skipOnboarding">Lewati untuk sekarang →</button>
       </div>
     </header>
 
@@ -60,21 +42,29 @@ const skipOnboarding = () => {
     <main class="ob-main">
       <div class="ob-inner">
         <div class="ob-hero">
-          <span class="ob-step-badge">Langkah 1 dari 2</span>
-          <h1>Pilih aplikasi untuk bisnis Anda 🚀</h1>
-          <p>Aktifkan modul yang Anda butuhkan. Anda bisa menambah atau mengubah kapan saja.</p>
+          <div class="ob-welcome-icon">🎉</div>
+          <h1>Selamat datang di Fisy!</h1>
+          <p>Langganan <strong>All Access</strong> Anda sudah aktif. Semua modul siap digunakan tanpa batasan.</p>
         </div>
 
+        <!-- All Access Banner -->
+        <div class="ob-access-banner">
+          <div class="oab-icon">✦</div>
+          <div class="oab-content">
+            <strong>All Access — 9 Modul Termasuk</strong>
+            <span>Akses penuh ke semua fitur bisnis tanpa tambahan biaya</span>
+          </div>
+        </div>
+
+        <!-- Module List - All included -->
         <div class="ob-apps-grid">
           <div
             v-for="app in apps"
             :key="app.id"
-            class="ob-app-card"
-            :class="{ selected: isSelected(app.id) }"
+            class="ob-app-card included"
             :style="{ '--app-color': app.color }"
-            @click="toggleApp(app)"
           >
-            <div class="oa-check" v-if="isSelected(app.id)">
+            <div class="oa-included-check">
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <div class="oa-icon">
@@ -93,16 +83,14 @@ const skipOnboarding = () => {
           </div>
         </div>
 
-        <!-- Bottom Bar -->
-        <div class="ob-bottom">
-          <span class="ob-selected-count">{{ selectedApps.length }} aplikasi dipilih</span>
+        <!-- CTA -->
+        <div class="ob-bottom-cta">
           <button
-            class="ob-install-btn"
-            :class="{ loading: isInstalling }"
-            @click="installApps"
-            :disabled="selectedApps.length === 0"
+            class="ob-go-btn"
+            :class="{ loading: isLoading }"
+            @click="goToDashboard"
           >
-            <span v-if="!isInstalling">Install & Lanjutkan</span>
+            <span v-if="!isLoading">Mulai Gunakan Fisy →</span>
             <span v-else class="spinner"></span>
           </button>
         </div>
@@ -124,50 +112,52 @@ const skipOnboarding = () => {
 }
 .ob-header-inner {
   max-width: 1200px; margin: 0 auto; padding: 0 32px; height: 64px;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: center;
 }
 .ob-brand { display: flex; align-items: center; gap: 10px; }
 .ob-logo { width: 32px; height: 32px; object-fit: contain; }
 .ob-logo-text { font-size: 1.1rem; font-weight: 800; color: #1a1a2e; }
-.ob-skip {
-  background: none; border: none; color: #8b8fa3; font-family: 'Inter',sans-serif;
-  font-size: 0.84rem; font-weight: 500; cursor: pointer; transition: color 0.2s;
-}
-.ob-skip:hover { color: #1e3c72; }
 
 /* Main */
-.ob-main { padding: 40px 32px 120px; }
+.ob-main { padding: 40px 32px 80px; }
 .ob-inner { max-width: 1000px; margin: 0 auto; }
 
-.ob-hero { text-align: center; margin-bottom: 40px; }
-.ob-step-badge {
-  display: inline-block; background: #eef2ff; color: #1e3c72;
-  font-size: 0.75rem; font-weight: 700; padding: 6px 16px; border-radius: 20px;
-  margin-bottom: 16px; letter-spacing: 0.03em;
-}
+.ob-hero { text-align: center; margin-bottom: 28px; }
+.ob-welcome-icon { font-size: 3rem; margin-bottom: 12px; }
 .ob-hero h1 { font-size: 2rem; font-weight: 900; color: #0a1628; margin-bottom: 10px; letter-spacing: -0.02em; }
 .ob-hero p { font-size: 0.95rem; color: #8b8fa3; max-width: 500px; margin: 0 auto; }
+.ob-hero strong { color: #1e3c72; }
+
+/* All Access Banner */
+.ob-access-banner {
+  display: flex; align-items: center; gap: 16px;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  border-radius: 16px; padding: 18px 24px; margin-bottom: 32px;
+  color: #fff;
+}
+.oab-icon { font-size: 1.5rem; width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.oab-content { display: flex; flex-direction: column; gap: 2px; }
+.oab-content strong { font-size: 0.95rem; font-weight: 700; }
+.oab-content span { font-size: 0.82rem; opacity: 0.85; }
 
 /* Apps Grid */
 .ob-apps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 40px; }
 .ob-app-card {
   background: #fff; border: 2px solid #f0f2f5; border-radius: 18px;
-  padding: 24px; cursor: pointer; transition: all 0.25s; position: relative;
+  padding: 24px; position: relative; transition: all 0.25s;
 }
-.ob-app-card:hover { border-color: #d0d5e0; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
-.ob-app-card.selected {
-  border-color: var(--app-color); background: color-mix(in srgb, var(--app-color), transparent 95%);
-  box-shadow: 0 4px 20px color-mix(in srgb, var(--app-color), transparent 80%);
+.ob-app-card.included {
+  border-color: color-mix(in srgb, var(--app-color), transparent 70%);
+  background: color-mix(in srgb, var(--app-color), transparent 96%);
 }
+.ob-app-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
 
-.oa-check {
+.oa-included-check {
   position: absolute; top: 12px; right: 12px;
   width: 24px; height: 24px; border-radius: 50%;
-  background: var(--app-color); display: flex; align-items: center; justify-content: center;
-  animation: popIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #059669; display: flex; align-items: center; justify-content: center;
 }
-.oa-check svg { width: 14px; height: 14px; }
-@keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+.oa-included-check svg { width: 14px; height: 14px; }
 
 .oa-icon {
   width: 48px; height: 48px; border-radius: 14px; display: flex;
@@ -180,23 +170,16 @@ const skipOnboarding = () => {
 .ob-app-card h3 { font-size: 0.95rem; font-weight: 700; color: #0a1628; margin-bottom: 4px; }
 .ob-app-card p { font-size: 0.78rem; color: #8b8fa3; line-height: 1.4; }
 
-/* Bottom  */
-.ob-bottom {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: #fff; border-top: 1px solid #e8ecf1;
-  padding: 16px 32px; display: flex; align-items: center; justify-content: center; gap: 24px;
-  z-index: 50;
-}
-.ob-selected-count { font-size: 0.88rem; font-weight: 500; color: #8b8fa3; }
-.ob-install-btn {
-  padding: 12px 36px; border-radius: 12px; border: none;
+/* CTA */
+.ob-bottom-cta { text-align: center; }
+.ob-go-btn {
+  padding: 14px 48px; border-radius: 14px; border: none;
   background: linear-gradient(135deg, #1e3c72, #2a5298); color: #fff;
-  font-family: 'Inter',sans-serif; font-size: 0.9rem; font-weight: 700;
-  cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 15px rgba(30,60,114,0.3);
-  display: flex; align-items: center; justify-content: center; min-width: 200px; min-height: 44px;
+  font-family: 'Inter',sans-serif; font-size: 0.95rem; font-weight: 700;
+  cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 20px rgba(30,60,114,0.3);
+  display: inline-flex; align-items: center; justify-content: center; min-width: 240px; min-height: 48px;
 }
-.ob-install-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(30,60,114,0.4); }
-.ob-install-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ob-go-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(30,60,114,0.4); }
 
 .spinner {
   width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.3);

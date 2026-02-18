@@ -6,31 +6,26 @@ const router = useRouter()
 
 // Simulated user subscription data
 const subscription = ref({
-  plan: 'Professional',
+  plan: 'All Access',
   status: 'Aktif',
   renewDate: '15 Mar 2026',
-  maxModules: 5
 })
 
-// Simulated active (subscribed) modules
+// All modules are active in All Access
 const activeModules = ref([
   { id: 1, name: 'Inventory', desc: 'Kelola stok, gudang, dan aset perusahaan.', icon: 'inventory', color: '#1e3c72', path: '/dashboard', stats: { label: 'Total Barang', value: '2,847' } },
+  { id: 2, name: 'HR & Payroll', desc: 'Karyawan, absensi, dan penggajian.', icon: 'hr', color: '#7c3aed', path: '/dashboard', stats: { label: 'Karyawan', value: '24' } },
   { id: 3, name: 'Akuntansi', desc: 'Pembukuan dan laporan keuangan.', icon: 'finance', color: '#059669', path: '/dashboard', stats: { label: 'Invoice Bulan Ini', value: '142' } },
+  { id: 4, name: 'CRM', desc: 'Pelanggan dan pipeline penjualan.', icon: 'crm', color: '#ea580c', path: '/dashboard', stats: { label: 'Leads Aktif', value: '38' } },
   { id: 5, name: 'Point of Sale', desc: 'Kasir digital dan laporan penjualan.', icon: 'pos', color: '#0ea5e9', path: '/dashboard', stats: { label: 'Transaksi Hari Ini', value: '89' } },
-])
-
-// Available modules that could be added
-const availableModules = ref([
-  { id: 2, name: 'HR & Payroll', icon: 'hr', color: '#7c3aed' },
-  { id: 4, name: 'CRM', icon: 'crm', color: '#ea580c' },
-  { id: 6, name: 'Project', icon: 'project', color: '#8b5cf6' },
-  { id: 7, name: 'E-Commerce', icon: 'ecommerce', color: '#f59e0b' },
-  { id: 8, name: 'Helpdesk', icon: 'helpdesk', color: '#06b6d4' },
-  { id: 9, name: 'Manufacturing', icon: 'manufacturing', color: '#dc2626' },
+  { id: 6, name: 'Project', desc: 'Task board dan resource planning.', icon: 'project', color: '#8b5cf6', path: '/dashboard', stats: { label: 'Task Aktif', value: '15' } },
+  { id: 7, name: 'E-Commerce', desc: 'Toko online dan manajemen pesanan.', icon: 'ecommerce', color: '#f59e0b', path: '/dashboard', stats: { label: 'Pesanan Baru', value: '7' } },
+  { id: 8, name: 'Helpdesk', desc: 'Tiket support dan knowledge base.', icon: 'helpdesk', color: '#06b6d4', path: '/dashboard', stats: { label: 'Tiket Terbuka', value: '12' } },
+  { id: 9, name: 'Manufacturing', desc: 'BoM, work order, dan quality control.', icon: 'manufacturing', color: '#dc2626', path: '/dashboard', stats: { label: 'Work Order', value: '5' } },
 ])
 
 const quickStats = [
-  { label: 'Modul Aktif', value: '3', color: '#1e3c72' },
+  { label: 'Modul Aktif', value: '9', color: '#1e3c72' },
   { label: 'User Aktif', value: '8', color: '#7c3aed' },
   { label: 'Transaksi Bulan ini', value: '1,247', color: '#059669' },
   { label: 'Storage', value: '2.4 GB', color: '#ea580c' },
@@ -45,7 +40,6 @@ const recentActivity = ref([
 ])
 
 const goModule = (mod) => router.push(mod.path)
-const goSubscribe = () => router.push('/subscribe')
 </script>
 
 <template>
@@ -81,7 +75,7 @@ const goSubscribe = () => router.push('/subscribe')
     <div class="ma-section">
       <div class="ma-section-head">
         <h2>🚀 Modul Aktif</h2>
-        <span class="ma-count">{{ activeModules.length }} / {{ subscription.maxModules }} slot</span>
+        <span class="ma-count">All Access · {{ activeModules.length }} modul</span>
       </div>
       <div class="ma-active-grid">
         <div class="ma-module-card" v-for="mod in activeModules" :key="mod.id" :style="{ '--mc': mod.color }" @click="goModule(mod)">
@@ -107,52 +101,21 @@ const goSubscribe = () => router.push('/subscribe')
           </div>
           <div class="mmc-open">Buka Modul →</div>
         </div>
-
-        <!-- Add Module Card -->
-        <div class="ma-add-card" v-if="activeModules.length < subscription.maxModules" @click="goSubscribe">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span>Tambah Modul</span>
-        </div>
       </div>
     </div>
 
-    <!-- Available Modules + Recent Activity -->
-    <div class="ma-bottom-grid">
-      <!-- Available Modules -->
-      <div class="ma-section ma-available">
-        <div class="ma-section-head">
-          <h2>📦 Modul Tersedia</h2>
-          <button class="ma-btn-add" @click="goSubscribe">+ Tambah</button>
-        </div>
-        <div class="ma-avail-list">
-          <div class="ma-avail-item" v-for="mod in availableModules" :key="mod.id" :style="{ '--mc': mod.color }">
-            <div class="mai-icon">
-              <svg v-if="mod.icon==='hr'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-              <svg v-else-if="mod.icon==='crm'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              <svg v-else-if="mod.icon==='project'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-              <svg v-else-if="mod.icon==='ecommerce'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-              <svg v-else-if="mod.icon==='helpdesk'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            </div>
-            <span class="mai-name">{{ mod.name }}</span>
-            <button class="mai-add-btn" @click.stop="goSubscribe">+</button>
-          </div>
-        </div>
+    <!-- Recent Activity -->
+    <div class="ma-section ma-recent">
+      <div class="ma-section-head">
+        <h2>📋 Aktivitas Terbaru</h2>
       </div>
-
-      <!-- Recent Activity -->
-      <div class="ma-section ma-recent">
-        <div class="ma-section-head">
-          <h2>📋 Aktivitas Terbaru</h2>
-        </div>
-        <div class="ma-activity-list">
-          <div class="ma-act-item" v-for="(act, i) in recentActivity" :key="i">
-            <div class="mai-timeline-dot" :style="{ background: act.color }"></div>
-            <div class="mai-act-content">
-              <span class="mai-act-module" :style="{ color: act.color }">{{ act.module }}</span>
-              <span class="mai-act-text">{{ act.action }}</span>
-              <span class="mai-act-time">{{ act.time }}</span>
-            </div>
+      <div class="ma-activity-list">
+        <div class="ma-act-item" v-for="(act, i) in recentActivity" :key="i">
+          <div class="mai-timeline-dot" :style="{ background: act.color }"></div>
+          <div class="mai-act-content">
+            <span class="mai-act-module" :style="{ color: act.color }">{{ act.module }}</span>
+            <span class="mai-act-text">{{ act.action }}</span>
+            <span class="mai-act-time">{{ act.time }}</span>
           </div>
         </div>
       </div>

@@ -21,7 +21,7 @@ const confirmState = ref({
 const form = ref({
   id: null,
   company: '',
-  plan: 'Starter',
+  plan: 'Monthly',
   price: '',
   status: 'Active',
   payment: 'Paid',
@@ -31,14 +31,14 @@ const form = ref({
 })
 
 const subscriptions = ref([
-  { id: 1, company: 'PT Maju Jaya', logo: 'MJ', plan: 'Enterprise', price: '$299/mo', status: 'Active', payment: 'Paid', start: '2026-02-14', end: '2027-02-14', autoRenew: true },
-  { id: 2, company: 'CV Berkah Sentosa', logo: 'BS', plan: 'Professional', price: '$149/mo', status: 'Active', payment: 'Paid', start: '2025-08-20', end: '2026-08-20', autoRenew: true },
-  { id: 3, company: 'PT Sinar Abadi', logo: 'SA', plan: 'Starter', price: '$49/mo', status: 'Trial', payment: 'Pending', start: '2026-02-01', end: '2026-03-15', autoRenew: false },
-  { id: 4, company: 'PT Harapan Baru', logo: 'HB', plan: 'Enterprise', price: '$299/mo', status: 'Active', payment: 'Paid', start: '2026-01-10', end: '2027-01-10', autoRenew: true },
-  { id: 5, company: 'PT Indo Teknologi', logo: 'IT', plan: 'Professional', price: '$149/mo', status: 'Expired', payment: 'Overdue', start: '2025-04-01', end: '2026-04-01', autoRenew: false },
-  { id: 6, company: 'CV Sinar Pagi', logo: 'SP', plan: 'Starter', price: '$49/mo', status: 'Active', payment: 'Paid', start: '2025-09-30', end: '2026-09-30', autoRenew: true },
-  { id: 7, company: 'PT Nusa Prima', logo: 'NP', plan: 'Enterprise', price: '$299/mo', status: 'Active', payment: 'Paid', start: '2026-05-20', end: '2027-05-20', autoRenew: true },
-  { id: 8, company: 'CV Karya Mandiri', logo: 'KM', plan: 'Starter', price: '$49/mo', status: 'Expired', payment: 'Overdue', start: '2025-01-15', end: '2026-01-15', autoRenew: false },
+  { id: 1, company: 'PT Maju Jaya', logo: 'MJ', plan: 'Yearly', price: 'Rp 10.000.000/yr', status: 'Active', payment: 'Paid', start: '2026-02-14', end: '2027-02-14', autoRenew: true },
+  { id: 2, company: 'CV Berkah Sentosa', logo: 'BS', plan: 'Monthly', price: 'Rp 999.000/mo', status: 'Active', payment: 'Paid', start: '2026-02-20', end: '2026-03-20', autoRenew: true },
+  { id: 3, company: 'PT Sinar Abadi', logo: 'SA', plan: 'Monthly', price: 'Rp 999.000/mo', status: 'Trial', payment: 'Pending', start: '2026-02-01', end: '2026-03-01', autoRenew: false },
+  { id: 4, company: 'PT Harapan Baru', logo: 'HB', plan: 'Yearly', price: 'Rp 10.000.000/yr', status: 'Active', payment: 'Paid', start: '2026-01-10', end: '2027-01-10', autoRenew: true },
+  { id: 5, company: 'PT Indo Teknologi', logo: 'IT', plan: 'Monthly', price: 'Rp 999.000/mo', status: 'Expired', payment: 'Overdue', start: '2025-04-01', end: '2025-05-01', autoRenew: false },
+  { id: 6, company: 'CV Sinar Pagi', logo: 'SP', plan: 'Monthly', price: 'Rp 999.000/mo', status: 'Active', payment: 'Paid', start: '2026-02-15', end: '2026-03-15', autoRenew: true },
+  { id: 7, company: 'PT Nusa Prima', logo: 'NP', plan: 'Yearly', price: 'Rp 10.000.000/yr', status: 'Active', payment: 'Paid', start: '2026-05-20', end: '2027-05-20', autoRenew: true },
+  { id: 8, company: 'CV Karya Mandiri', logo: 'KM', plan: 'Monthly', price: 'Rp 999.000/mo', status: 'Expired', payment: 'Overdue', start: '2026-01-15', end: '2026-02-15', autoRenew: false },
 ])
 
 const filtered = computed(() => {
@@ -68,15 +68,30 @@ const openAddModal = () => {
     form.value = {
         id: null,
         company: '',
-        plan: 'Starter',
-        price: 'Rp 199.000',
+        plan: 'Monthly',
+        price: 'Rp 999.000/mo',
         status: 'Active',
         payment: 'Pending',
         start: new Date().toISOString().split('T')[0],
-        end: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+        end: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
         autoRenew: true
     }
     showEditModal.value = true
+}
+
+const updatePrice = () => {
+    if (form.value.plan === 'Monthly') {
+        form.value.price = 'Rp 999.000/mo'
+        // Update end date to 1 month from start if needed, simplified here
+        const startDate = new Date(form.value.start || new Date())
+        const endDate = new Date(startDate.setMonth(startDate.getMonth() + 1))
+        form.value.end = endDate.toISOString().split('T')[0]
+    } else {
+        form.value.price = 'Rp 10.000.000/yr'
+        const startDate = new Date(form.value.start || new Date())
+        const endDate = new Date(startDate.setFullYear(startDate.getFullYear() + 1))
+        form.value.end = endDate.toISOString().split('T')[0]
+    }
 }
 
 const saveSubscription = () => {
@@ -113,7 +128,7 @@ const executeConfirm = () => {
 }
 
 const exportCSV = () => {
-  const headers = ['Company', 'Plan', 'Price', 'Status', 'Payment', 'Start Date', 'End Date', 'Auto Renew']
+  const headers = ['Company', 'Cycle', 'Price', 'Status', 'Payment', 'Start Date', 'End Date', 'Auto Renew']
   const rows = filtered.value.map(s => [s.company, s.plan, s.price, s.status, s.payment, s.start, s.end, s.autoRenew ? 'Yes' : 'No'])
   const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
@@ -134,7 +149,7 @@ const exportCSV = () => {
       </div>
       <div class="sa-header-actions">
         <button class="sa-btn-outline" @click="exportCSV">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export CSV
         </button>
         <button class="sa-btn-primary" @click="openAddModal">
@@ -164,7 +179,7 @@ const exportCSV = () => {
           <thead>
             <tr>
               <th>Company</th>
-              <th>Plan</th>
+              <th>Billing Cycle</th>
               <th>Price</th>
               <th>Status</th>
               <th>Payment</th>
@@ -227,11 +242,10 @@ const exportCSV = () => {
           </div>
           <div class="sa-form-row">
             <div class="sa-form-group">
-                <label>Plan</label>
-                <select v-model="form.plan" class="sa-input">
-                    <option>Starter</option>
-                    <option>Professional</option>
-                    <option>Enterprise</option>
+                <label>Billing Cycle</label>
+                <select v-model="form.plan" class="sa-input" @change="updatePrice">
+                    <option value="Monthly">Monthly</option>
+                    <option value="Yearly">Yearly</option>
                 </select>
             </div>
             <div class="sa-form-group">
@@ -291,7 +305,7 @@ const exportCSV = () => {
              <div class="sa-company-avatar lg">{{ selectedSub?.logo }}</div>
              <div>
                 <h2>{{ selectedSub?.company }}</h2>
-                <span class="sa-plan-badge" :class="'plan-' + selectedSub?.plan.toLowerCase()">{{ selectedSub?.plan }} Plan</span>
+                <span class="sa-plan-badge" :class="'plan-' + selectedSub?.plan.toLowerCase()">{{ selectedSub?.plan }}</span>
              </div>
           </div>
           <button class="sa-modal-close" @click="showDetailModal = false">
@@ -314,7 +328,7 @@ const exportCSV = () => {
               </div>
               <div class="sa-detail-card">
                   <span class="sa-detail-label">Billing Cycle</span>
-                  <span class="sa-detail-value">Monthly</span>
+                  <span class="sa-detail-value">{{ selectedSub?.plan }}</span>
               </div>
           </div>
           
@@ -395,9 +409,8 @@ tbody tr:last-child td { border-bottom: none; }
 .status-suspended { background: #fef2f2; color: #dc2626; }
 
 .sa-plan-badge { display: inline-flex; padding: 3px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
-.plan-enterprise { background: #eef2ff; color: #1e3c72; }
-.plan-professional { background: #f5f3ff; color: #7c3aed; }
-.plan-starter { background: #ecfdf5; color: #059669; }
+.plan-yearly { background: #eef2ff; color: #1e3c72; }
+.plan-monthly { background: #f5f3ff; color: #7c3aed; }
 
 .sa-payment-badge { display: inline-flex; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
 .payment-paid { background: #ecfdf5; color: #059669; }
