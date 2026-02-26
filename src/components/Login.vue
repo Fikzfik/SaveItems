@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import bgImage from '@/assets/images/login-bg.png'
 
@@ -11,14 +11,20 @@ const toggleMode = () => {
 }
 
 const handleSignIn = () => {
-  // After login, go to user home (landing-style with subscription options)
   router.push('/home')
 }
 
 const handleSignUp = () => {
-  // After registration, redirect to OTP verification
   router.push('/verify-otp')
 }
+
+// Add/remove body class for login-specific layout
+onMounted(() => {
+  document.body.classList.add('login-page-active')
+})
+onBeforeUnmount(() => {
+  document.body.classList.remove('login-page-active')
+})
 </script>
 
 <template>
@@ -154,11 +160,9 @@ const handleSignUp = () => {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* ====== GLOBAL ====== */
-:global(body) {
-  margin: 0;
-  padding: 0;
-  width: 100vw;
+/* ====== GLOBAL (only active on login page) ====== */
+:global(body.login-page-active) {
+  width: 100%;
   height: 100vh;
   display: flex;
   justify-content: center;
@@ -172,7 +176,7 @@ const handleSignUp = () => {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   background-repeat: no-repeat;
   background-position: center center;
