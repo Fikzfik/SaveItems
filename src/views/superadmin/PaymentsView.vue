@@ -31,6 +31,31 @@ const filtered = computed(() => {
 })
 
 const getStatusClass = (s) => ({ Paid: 'pay-paid', Pending: 'pay-pending', Overdue: 'pay-overdue', Failed: 'pay-failed' }[s] || '')
+
+// Modal & Actions
+const showModal = ref(false)
+const selectedInvoice = ref(null)
+
+const viewInvoice = (pay) => {
+  selectedInvoice.value = { ...pay }
+  showModal.value = true
+}
+
+const updateStatus = () => {
+  if (!selectedInvoice.value) return
+  const idx = payments.value.findIndex(p => p.id === selectedInvoice.value.id)
+  if (idx !== -1) {
+    payments.value[idx].status = selectedInvoice.value.status
+  }
+  showModal.value = false
+}
+
+const deleteInvoice = (id) => {
+  if (confirm('Hapus riwayat tagihan ini secara permanen?')) {
+    payments.value = payments.value.filter(p => p.id !== id)
+    showModal.value = false
+  }
+}
 </script>
 
 <template>
@@ -98,7 +123,7 @@ const getStatusClass = (s) => ({ Paid: 'pay-paid', Pending: 'pay-pending', Overd
               <td class="sa-td-date">{{ pay.dueDate }}</td>
               <td>
                 <div class="sa-action-btns">
-                  <button class="sa-action-btn" title="View Invoice">
+                  <button class="sa-action-btn" title="View Invoice" @click="viewInvoice(pay)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   </button>
                   <button class="sa-action-btn" title="Download">
@@ -109,6 +134,69 @@ const getStatusClass = (s) => ({ Paid: 'pay-paid', Pending: 'pay-pending', Overd
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Invoice Modal -->
+    <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Invoice Details</h2>
+          <button class="close-btn" @click="showModal = false">&times;</button>
+        </div>
+        <div class="modal-body" v-if="selectedInvoice">
+          <div class="inv-header-box">
+            <div class="inv-id">{{ selectedInvoice.id }}</div>
+            <span class="sa-pay-badge" :class="getStatusClass(selectedInvoice.status)">{{ selectedInvoice.status }}</span>
+          </div>
+
+          <div class="inv-details-grid">
+            <div class="inv-group">
+              <label>Company</label>
+              <div class="sa-company-cell">
+                <div class="sa-company-avatar">{{ selectedInvoice.logo }}</div>
+                <span class="sa-company-name-cell">{{ selectedInvoice.company }}</span>
+              </div>
+            </div>
+            <div class="inv-group">
+              <label>Amount</label>
+              <div class="inv-amount-text">{{ selectedInvoice.amount }}</div>
+            </div>
+            <div class="inv-group">
+              <label>Billing Plan</label>
+              <div class="inv-text">{{ selectedInvoice.plan }}</div>
+            </div>
+            <div class="inv-group">
+              <label>Payment Method</label>
+              <div class="inv-text">{{ selectedInvoice.method }}</div>
+            </div>
+            <div class="inv-group">
+              <label>Issue Date</label>
+              <div class="inv-text">{{ selectedInvoice.date }}</div>
+            </div>
+            <div class="inv-group">
+              <label>Due Date</label>
+              <div class="inv-text">{{ selectedInvoice.dueDate }}</div>
+            </div>
+          </div>
+
+          <div class="inv-actions-box">
+            <label>Update Status</label>
+            <div class="inv-status-update">
+              <select v-model="selectedInvoice.status" class="sa-select">
+                <option value="Paid">Paid</option>
+                <option value="Pending">Pending</option>
+                <option value="Overdue">Overdue</option>
+                <option value="Failed">Failed</option>
+              </select>
+              <button class="btn-primary" @click="updateStatus">Update Status</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" v-if="selectedInvoice">
+          <button class="btn-danger" @click="deleteInvoice(selectedInvoice.id)">Delete Invoice</button>
+          <button class="btn-outline" @click="showModal = false">Close</button>
+        </div>
       </div>
     </div>
   </div>
@@ -167,9 +255,41 @@ tbody tr:last-child td { border-bottom: none; }
 .sa-action-btn:hover { background: var(--accent-bg, #eef2ff); color: var(--accent, #1e3c72); }
 .sa-action-btn svg { width: 14px; height: 14px; }
 
+/* Modal Styles */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(4px); }
+.modal-content { background: var(--bg-surface, #fff); width: 100%; max-width: 500px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column; }
+.modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: space-between; align-items: center; }
+.modal-header h2 { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+.close-btn { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; transition: color 0.2s; line-height: 1; margin-top: -4px; }
+.close-btn:hover { color: #ef4444; }
+.modal-body { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+
+.inv-header-box { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px dashed var(--border-color); }
+.inv-id { font-size: 1.1rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+
+.inv-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; }
+.inv-group { display: flex; flex-direction: column; gap: 6px; }
+.inv-group label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.inv-text { font-size: 0.9rem; font-weight: 500; color: var(--text-primary); }
+.inv-amount-text { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); }
+
+.inv-actions-box { background: var(--bg-input, #f8fafc); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; }
+.inv-actions-box label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
+.inv-status-update { display: flex; gap: 10px; }
+.inv-status-update .sa-select { flex: 1; }
+
+.btn-primary { padding: 9px 16px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-primary:hover { background: #2a5298; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: space-between; gap: 12px; background: var(--bg-input, #f8fafc); }
+.btn-outline { padding: 9px 16px; background: transparent; border: 1px solid var(--border-color, #e2e8f0); border-radius: 10px; color: var(--text-secondary); font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-outline:hover { background: var(--bg-hover, #f1f5f9); color: var(--text-primary); }
+.btn-danger { padding: 9px 16px; background: transparent; border: 1px solid #fee2e2; border-radius: 10px; color: #ef4444; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-danger:hover { background: #fee2e2; }
+
 @media (max-width: 768px) {
   .sa-pay-stats { grid-template-columns: repeat(2, 1fr); }
   .sa-filters { flex-direction: column; }
   .sa-search-filter { max-width: none; }
+  .inv-details-grid { grid-template-columns: 1fr; }
 }
 </style>

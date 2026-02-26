@@ -132,11 +132,12 @@ onMounted(() => {
     <Transition name="success-fade">
       <div v-if="showSuccess" class="pay-success-overlay">
         <div class="pay-success-content">
-          <div class="pay-success-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <div class="pay-success-icon" :class="{ 'is-pending': paymentMethod !== 'card' }">
+            <svg v-if="paymentMethod === 'card'" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
-          <h2>Pembayaran Berhasil! 🎉</h2>
-          <p>Langganan Anda sudah aktif. Mengalihkan ke dashboard...</p>
+          <h2>{{ paymentMethod === 'card' ? 'Pembayaran Berhasil! 🎉' : 'Instruksi Terkirim ⏳' }}</h2>
+          <p>{{ paymentMethod === 'card' ? 'Langganan Anda sudah aktif. Mengalihkan ke dashboard...' : 'Silakan selesaikan pembayaran Anda. Mengalihkan ke dashboard...' }}</p>
           <div class="pay-success-spinner"></div>
         </div>
       </div>
@@ -440,8 +441,9 @@ onMounted(() => {
                 @click="processPayment"
               >
                 <span v-if="!isProcessing">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  Bayar {{ formatCurrency(total) }}
+                  <svg v-if="paymentMethod === 'card'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  {{ paymentMethod === 'card' ? `Bayar ${formatCurrency(total)}` : 'Konfirmasi Pembayaran' }}
                 </span>
                 <span v-else class="pay-btn-spinner"></span>
               </button>
@@ -711,6 +713,7 @@ onMounted(() => {
   margin: 0 auto 20px; box-shadow: 0 8px 30px rgba(5,150,105,0.3);
   animation: successBounce 0.6s ease 0.2s;
 }
+.pay-success-icon.is-pending { background: linear-gradient(135deg, #ea580c, #fb923c); box-shadow: 0 8px 30px rgba(234, 88, 12, 0.3); }
 @keyframes successBounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 .pay-success-icon svg { width: 36px; height: 36px; }
 .pay-success-content h2 { font-size: 1.5rem; font-weight: 800; color: #0a1628; margin: 0 0 8px; }

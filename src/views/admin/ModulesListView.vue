@@ -13,18 +13,39 @@ const activeModules = ref([
   { id: 1, name: 'Inventory', desc: 'Kelola stok, gudang, dan aset perusahaan secara real-time.', icon: 'inventory', color: '#1e3c72', path: '/dashboard/inventori', stats: '2,847 barang' },
   { id: 2, name: 'HR & Payroll', desc: 'Manajemen karyawan, absensi, dan penggajian otomatis.', icon: 'hr', color: '#7c3aed', path: '/dashboard', stats: '24 karyawan' },
   { id: 3, name: 'Akuntansi', desc: 'Pembukuan, laporan keuangan, dan manajemen invoice.', icon: 'finance', color: '#059669', path: '/dashboard', stats: '142 invoice' },
-  { id: 4, name: 'CRM', desc: 'Kelola pelanggan, pipeline penjualan, dan marketing.', icon: 'crm', color: '#ea580c', path: '/dashboard', stats: '38 leads aktif' },
   { id: 5, name: 'Point of Sale', desc: 'Kasir digital, transaksi cepat, dan laporan penjualan.', icon: 'pos', color: '#0ea5e9', path: '/dashboard', stats: '89 transaksi hari ini' },
-  { id: 6, name: 'Project', desc: 'Task board, milestone, timeline, dan resource planning.', icon: 'project', color: '#8b5cf6', path: '/dashboard', stats: '15 task aktif' },
-  { id: 7, name: 'E-Commerce', desc: 'Toko online, katalog produk, dan manajemen pesanan.', icon: 'ecommerce', color: '#f59e0b', path: '/dashboard', stats: '7 pesanan baru' },
   { id: 8, name: 'Helpdesk', desc: 'Tiket support, SLA tracking, dan knowledge base.', icon: 'helpdesk', color: '#06b6d4', path: '/dashboard', stats: '12 tiket terbuka' },
   { id: 9, name: 'Manufacturing', desc: 'Bill of Materials, work order, dan quality control.', icon: 'manufacturing', color: '#dc2626', path: '/dashboard', stats: '5 work order' },
 ])
 
+const availableModules = ref([
+  { id: 4, name: 'CRM', desc: 'Kelola pelanggan, pipeline penjualan, dan marketing automation.', icon: 'crm', color: '#ea580c', path: '/dashboard', stats: 'Akses penuh CRM' },
+  { id: 6, name: 'Project', desc: 'Task board, milestone, timeline, dan resource planning.', icon: 'project', color: '#8b5cf6', path: '/dashboard', stats: 'Tanpa batas project' },
+  { id: 7, name: 'E-Commerce', desc: 'Integrasi platform toko online, katalog produk, dan logistik.', icon: 'ecommerce', color: '#f59e0b', path: '/dashboard', stats: 'Sync realtime' },
+])
+
+const activeTab = ref('active')
 const searchQuery = ref('')
+
 const filteredActive = computed(() => activeModules.value.filter(m => m.name.toLowerCase().includes(searchQuery.value.toLowerCase())))
+const filteredAvailable = computed(() => availableModules.value.filter(m => m.name.toLowerCase().includes(searchQuery.value.toLowerCase())))
 
 const goModule = (mod) => router.push(mod.path)
+
+const installModule = (mod) => {
+  if (confirm(`Instal modul ${mod.name} sekarang?`)) {
+    availableModules.value = availableModules.value.filter(m => m.id !== mod.id)
+    activeModules.value.push(mod)
+  }
+}
+
+const uninstallModule = (mod, event) => {
+  event.stopPropagation() // Mencegah triger click card-nya (yg membuka dashboard modul)
+  if (confirm(`Nonaktifkan modul ${mod.name}? Anda tetap dapat mengaktifkannya lagi nanti dari tab Jelajahi.`)) {
+    activeModules.value = activeModules.value.filter(m => m.id !== mod.id)
+    availableModules.value.push(mod)
+  }
+}
 </script>
 
 <template>
@@ -49,12 +70,25 @@ const goModule = (mod) => router.push(mod.path)
       <span class="mvs-plan">Paket {{ subscription.plan }}</span>
     </div>
 
+    <!-- Filter Tabs -->
+    <div class="mv-tabs-wrapper">
+      <div class="mv-tabs">
+        <button class="mv-tab-btn" :class="{ active: activeTab === 'active' }" @click="activeTab = 'active'">
+          Modul Aktif ({{ activeModules.length }})
+        </button>
+        <button class="mv-tab-btn" :class="{ active: activeTab === 'browse' }" @click="activeTab = 'browse'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+          Jelajahi App Store
+        </button>
+      </div>
+    </div>
+
     <!-- Active Modules -->
-    <div class="mv-section">
+    <div class="mv-section" v-if="activeTab === 'active'">
       <h2 class="mv-section-title">
         <span class="mvst-dot active"></span> Modul Aktif ({{ filteredActive.length }})
       </h2>
-      <div class="mv-grid">
+      <div class="mv-grid" v-if="filteredActive.length > 0">
         <div class="mv-card active" v-for="mod in filteredActive" :key="mod.id" :style="{ '--mc': mod.color }" @click="goModule(mod)">
           <div class="mvc-top">
             <div class="mvc-icon">
@@ -71,6 +105,9 @@ const goModule = (mod) => router.push(mod.path)
             <div class="mvc-status active">
               <span class="mvc-status-dot"></span> Aktif
             </div>
+            <button class="mvc-uninstall" title="Nonaktifkan" @click="uninstallModule(mod, $event)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
           </div>
           <h3>{{ mod.name }}</h3>
           <p class="mvc-desc">{{ mod.desc }}</p>
@@ -79,6 +116,47 @@ const goModule = (mod) => router.push(mod.path)
             <span class="mvc-open">Buka →</span>
           </div>
         </div>
+      </div>
+      <!-- Empty Active -->
+      <div class="empty-state" v-else>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        <p>Tidak ada modul aktif yang cocok dengan pencarian.</p>
+      </div>
+    </div>
+
+    <!-- Available Modules (App Store) -->
+    <div class="mv-section" v-if="activeTab === 'browse'">
+      <h2 class="mv-section-title">
+        Modul yang Tersedia untuk Diinstal ({{ filteredAvailable.length }})
+      </h2>
+      <div class="mv-grid" v-if="filteredAvailable.length > 0">
+        <div class="mv-card available" v-for="mod in filteredAvailable" :key="mod.id" :style="{ '--mc': mod.color }">
+          <div class="mvc-top">
+            <div class="mvc-icon">
+              <!-- Reusing icon SVGs implicitly since they're duplicated in template, I'll copy the block for 'mod' -->
+              <svg v-if="mod.icon==='inventory'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              <svg v-else-if="mod.icon==='finance'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <svg v-else-if="mod.icon==='pos'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              <svg v-else-if="mod.icon==='hr'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <svg v-else-if="mod.icon==='crm'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <svg v-else-if="mod.icon==='project'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+              <svg v-else-if="mod.icon==='ecommerce'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              <svg v-else-if="mod.icon==='helpdesk'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+          </div>
+          <h3>{{ mod.name }}</h3>
+          <p class="mvc-desc">{{ mod.desc }}</p>
+          <div class="mvc-footer">
+            <span class="mvc-stats">{{ mod.stats }}</span>
+            <button class="mvc-activate" @click="installModule(mod)">Instal Modul</button>
+          </div>
+        </div>
+      </div>
+      <!-- Empty Available -->
+      <div class="empty-state" v-else>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <p>Semua modul sudah diinstal atau tidak ditemukan kecocokan pencarian.</p>
       </div>
     </div>
   </div>
@@ -122,23 +200,38 @@ const goModule = (mod) => router.push(mod.path)
 .mv-card.active { cursor: pointer; }
 .mv-card.active:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.06); }
 .mv-card.active:hover::before { opacity: 1; }
-.mv-card.inactive { opacity: 0.75; }
-.mv-card.inactive:hover { opacity: 1; }
+.mv-card.available { border-color: var(--border-color); background: var(--bg-surface); }
+.mv-card.available:hover { border-color: var(--mc); box-shadow: 0 4px 15px rgba(0,0,0,0.04); }
 
 .mvc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
 .mvc-icon { width: 44px; height: 44px; border-radius: 12px; background: color-mix(in srgb, var(--mc), transparent 88%); color: var(--mc); display: flex; align-items: center; justify-content: center; }
 .mvc-icon svg { width: 22px; height: 22px; }
 .mvc-status { font-size: 0.7rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; display: flex; align-items: center; gap: 4px; }
-.mvc-status.active { color: #059669; background: #ecfdf5; }
-.mvc-status.inactive { color: #94a3b8; background: var(--bg-input); }
+.mvc-status.active { color: #059669; background: #ecfdf5; margin-right: auto; margin-left: 12px; }
 .mvc-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
+.mvc-uninstall { width: 28px; height: 28px; border: none; background: transparent; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+.mvc-uninstall svg { width: 14px; height: 14px; }
+.mvc-uninstall:hover { color: #ef4444; background: #fee2e2; }
+
 .mv-card h3 { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0 0 6px; }
-.mvc-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 16px; }
-.mvc-footer { display: flex; justify-content: space-between; align-items: center; }
+.mvc-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 16px; min-height: 38px; }
+.mvc-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
 .mvc-stats { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
 .mvc-open { font-size: 0.78rem; font-weight: 600; color: var(--mc); }
 .mvc-activate { padding: 7px 18px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); font-family: 'Inter',sans-serif; font-size: 0.78rem; font-weight: 600; color: var(--accent); cursor: pointer; transition: all 0.2s; }
 .mvc-activate:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Tabs */
+.mv-tabs-wrapper { border-bottom: 1px solid var(--border-color); margin-bottom: 24px; }
+.mv-tabs { display: flex; gap: 24px; }
+.mv-tab-btn { background: none; border: none; padding: 12px 0 10px; font-family: 'Inter',sans-serif; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; position: relative; display: flex; align-items: center; gap: 8px; }
+.mv-tab-btn:hover { color: var(--text-primary); }
+.mv-tab-btn.active { color: var(--accent); }
+.mv-tab-btn.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--accent); border-radius: 2px 2px 0 0; }
+
+/* Empty state */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted); gap: 12px; }
+.empty-state svg { width: 48px; height: 48px; opacity: 0.5; }
 
 /* Responsive */
 @media (max-width: 1100px) { .mv-grid { grid-template-columns: repeat(2, 1fr); } }

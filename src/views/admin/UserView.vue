@@ -35,6 +35,8 @@ const getInitials = (name) => {
 }
 
 const showModal = ref(false)
+const isEditing = ref(false)
+const editingId = ref(null)
 
 const newUser = ref({
   nama: '',
@@ -44,25 +46,51 @@ const newUser = ref({
   phone: ''
 })
 
-const addUser = () => {
+const openAddModal = () => {
+  isEditing.value = false
+  editingId.value = null
+  newUser.value = { nama: '', email: '', role: 'Staff', departemen: 'IT', phone: '' }
+  showModal.value = true
+}
+
+const editUser = (user) => {
+  isEditing.value = true
+  editingId.value = user.id
+  newUser.value = { ...user }
+  showModal.value = true
+}
+
+const deleteUser = (id) => {
+  if (confirm('Apakah Anda yakin ingin menghapus user ini?')) {
+    users.value = users.value.filter(u => u.id !== id)
+  }
+}
+
+const saveUser = () => {
   if (!newUser.value.nama || !newUser.value.email) return
 
-  const colors = ['#1e3c72', '#7c3aed', '#059669', '#ea580c', '#dc2626', '#0891b2', '#be185d']
-  const randomColor = colors[Math.floor(Math.random() * colors.length)]
+  if (isEditing.value) {
+    const index = users.value.findIndex(u => u.id === editingId.value)
+    if (index !== -1) {
+      users.value[index] = { ...users.value[index], ...newUser.value }
+    }
+  } else {
+    const colors = ['#1e3c72', '#7c3aed', '#059669', '#ea580c', '#dc2626', '#0891b2', '#be185d']
+    const randomColor = colors[Math.floor(Math.random() * colors.length)]
 
-  users.value.unshift({
-    id: users.value.length + 1,
-    nama: newUser.value.nama,
-    role: newUser.value.role,
-    departemen: newUser.value.departemen,
-    phone: newUser.value.phone || '-',
-    email: newUser.value.email,
-    status: 'active',
-    color: randomColor
-  })
+    users.value.unshift({
+      id: Date.now(),
+      nama: newUser.value.nama,
+      role: newUser.value.role,
+      departemen: newUser.value.departemen,
+      phone: newUser.value.phone || '-',
+      email: newUser.value.email,
+      status: 'active',
+      color: randomColor
+    })
+  }
 
   showModal.value = false
-  newUser.value = { nama: '', email: '', role: 'Staff', departemen: 'IT', phone: '' }
 }
 </script>
 
@@ -93,7 +121,7 @@ const addUser = () => {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </button>
         </div>
-        <button class="btn-primary" @click="showModal = true">
+        <button class="btn-primary" @click="openAddModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
           New Contact
         </button>
@@ -111,9 +139,14 @@ const addUser = () => {
       <div class="user-card" v-for="user in filteredUsers" :key="user.id">
         <div class="card-header">
           <div class="status-indicator" :class="user.status"></div>
-          <button class="card-menu" title="More">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-          </button>
+          <div class="card-actions-mini">
+            <button class="card-menu-btn edit" title="Edit" @click="editUser(user)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="card-menu-btn delete" title="Delete" @click="deleteUser(user.id)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
         </div>
         <div class="card-avatar" :style="{ background: user.color }">
           {{ getInitials(user.nama) }}
@@ -167,10 +200,10 @@ const addUser = () => {
               </td>
               <td>
                 <div class="action-btns">
-                  <button class="act-btn act-edit" title="Edit">
+                  <button class="act-btn act-edit" title="Edit" @click="editUser(user)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
-                  <button class="act-btn act-delete" title="Hapus">
+                  <button class="act-btn act-delete" title="Hapus" @click="deleteUser(user.id)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
                 </div>
@@ -192,7 +225,7 @@ const addUser = () => {
   <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Tambah User Baru</h2>
+        <h2>{{ isEditing ? 'Edit User' : 'Tambah User Baru' }}</h2>
         <button class="close-btn" @click="showModal = false">&times;</button>
       </div>
       <div class="modal-body">
@@ -229,7 +262,7 @@ const addUser = () => {
       </div>
       <div class="modal-footer">
         <button class="btn-outline" @click="showModal = false">Batal</button>
-        <button class="btn-primary" @click="addUser">Simpan User</button>
+        <button class="btn-primary" @click="saveUser">{{ isEditing ? 'Update User' : 'Simpan User' }}</button>
       </div>
     </div>
   </div>
@@ -416,9 +449,14 @@ const addUser = () => {
   box-shadow: 0 0 0 3px rgba(209, 213, 219, 0.2);
 }
 
-.card-menu {
-  width: 28px;
-  height: 28px;
+.card-actions-mini {
+  display: flex;
+  gap: 4px;
+}
+
+.card-menu-btn {
+  width: 26px;
+  height: 26px;
   border: none;
   background: transparent;
   border-radius: 6px;
@@ -430,14 +468,19 @@ const addUser = () => {
   transition: all 0.2s;
 }
 
-.card-menu svg {
-  width: 16px;
-  height: 16px;
+.card-menu-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
-.card-menu:hover {
+.card-menu-btn.edit:hover {
   background: var(--bg-hover);
-  color: var(--text-secondary);
+  color: var(--accent);
+}
+
+.card-menu-btn.delete:hover {
+  background: #fee2e2;
+  color: #ef4444;
 }
 
 .card-avatar {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const modules = ref([
   { id: 1, name: 'Inventory', desc: 'Track and manage all inventory items, categories, and stock levels', icon: 'inventory', enabled: true, installed: true, color: '#1e3c72' },
@@ -14,6 +14,67 @@ const modules = ref([
 ])
 
 const toggleModule = (mod) => { mod.enabled = !mod.enabled; if (mod.enabled) mod.installed = true }
+
+const searchQuery = ref('')
+const filteredModules = computed(() => {
+  if (!searchQuery.value) return modules.value
+  const q = searchQuery.value.toLowerCase()
+  return modules.value.filter(m => m.name.toLowerCase().includes(q) || m.desc.toLowerCase().includes(q))
+})
+
+const showModal = ref(false)
+const isEditing = ref(false)
+const editingId = ref(null)
+
+const newModule = ref({
+  name: '',
+  desc: '',
+  icon: 'inventory',
+  color: '#1e3c72'
+})
+
+const openAddModal = () => {
+  isEditing.value = false
+  editingId.value = null
+  newModule.value = { name: '', desc: '', icon: 'inventory', color: '#1e3c72' }
+  showModal.value = true
+}
+
+const editModule = (mod) => {
+  isEditing.value = true
+  editingId.value = mod.id
+  newModule.value = { ...mod }
+  showModal.value = true
+}
+
+const deleteModule = (id) => {
+  if (confirm('Apakah Anda yakin ingin menghapus modul ini secara permanen?')) {
+    modules.value = modules.value.filter(m => m.id !== id)
+  }
+}
+
+const saveModule = () => {
+  if (!newModule.value.name || !newModule.value.desc) return
+
+  if (isEditing.value) {
+    const idx = modules.value.findIndex(m => m.id === editingId.value)
+    if (idx !== -1) {
+      modules.value[idx] = { ...modules.value[idx], ...newModule.value }
+    }
+  } else {
+    modules.value.push({
+      id: Date.now(),
+      name: newModule.value.name,
+      desc: newModule.value.desc,
+      icon: newModule.value.icon,
+      color: newModule.value.color,
+      enabled: false,
+      installed: false
+    })
+  }
+
+  showModal.value = false
+}
 </script>
 
 <template>
@@ -22,6 +83,16 @@ const toggleModule = (mod) => { mod.enabled = !mod.enabled; if (mod.enabled) mod
       <div>
         <h1>Modules Management</h1>
         <p class="sa-page-subtitle">Enable or disable platform modules for all companies</p>
+      </div>
+      <div class="sa-header-actions">
+        <div class="search-bar-mod">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input v-model="searchQuery" type="text" placeholder="Search modules..." />
+        </div>
+        <button class="btn-primary" @click="openAddModal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Add Module
+        </button>
       </div>
     </div>
 
@@ -43,7 +114,7 @@ const toggleModule = (mod) => { mod.enabled = !mod.enabled; if (mod.enabled) mod
 
     <!-- Module Grid -->
     <div class="sa-module-grid">
-      <div class="sa-module-card" v-for="mod in modules" :key="mod.id" :class="{ 'is-disabled': !mod.enabled }">
+      <div class="sa-module-card" v-for="mod in filteredModules" :key="mod.id" :class="{ 'is-disabled': !mod.enabled }">
         <div class="sa-module-top">
           <div class="sa-module-icon" :style="{ '--mod-color': mod.color }">
             <svg v-if="mod.icon === 'inventory'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
@@ -56,7 +127,16 @@ const toggleModule = (mod) => { mod.enabled = !mod.enabled; if (mod.enabled) mod
             <svg v-else-if="mod.icon === 'ecommerce'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
             <svg v-else-if="mod.icon === 'helpdesk'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </div>
-          <div v-if="mod.installed" class="sa-installed-badge">Installed</div>
+          <div class="sa-module-top-right">
+            <div class="card-actions-mini">
+              <button class="card-menu-btn edit" title="Edit" @click="editModule(mod)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="card-menu-btn delete" title="Delete" @click="deleteModule(mod.id)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
         </div>
         <h3 class="sa-module-name">{{ mod.name }}</h3>
         <p class="sa-module-desc">{{ mod.desc }}</p>
@@ -69,14 +149,90 @@ const toggleModule = (mod) => { mod.enabled = !mod.enabled; if (mod.enabled) mod
         </div>
       </div>
     </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" v-if="filteredModules.length === 0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
+      <p>Tidak ada modul ditemukan</p>
+    </div>
+  </div>
+
+  <!-- Modal Tambah/Edit Modul -->
+  <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{{ isEditing ? 'Edit Module' : 'Add New Module' }}</h2>
+        <button class="close-btn" @click="showModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Module Name</label>
+          <input v-model="newModule.name" type="text" placeholder="e.g. Inventory" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea v-model="newModule.desc" placeholder="Briefly describe the module..." rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Icon</label>
+            <select v-model="newModule.icon">
+              <option value="inventory">Inventory Box</option>
+              <option value="hr">Users/HR</option>
+              <option value="finance">Finance/Wallet</option>
+              <option value="crm">CRM/Graph</option>
+              <option value="reports">Reports/Chart</option>
+              <option value="api">API/Code</option>
+              <option value="project">Project Board</option>
+              <option value="ecommerce">Shopping Cart</option>
+              <option value="helpdesk">Helpdesk Shield</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Theme Color</label>
+            <div class="color-picker-wrapper">
+              <input v-model="newModule.color" type="color" class="color-picker-input" />
+              <span class="color-hex">{{ newModule.color }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" @click="showModal = false">Cancel</button>
+        <button class="btn-primary" @click="saveModule">{{ isEditing ? 'Update Module' : 'Save Module' }}</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .sa-modules { max-width: 1400px; }
-.sa-page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.sa-page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
 .sa-page-header h1 { font-size: 1.5rem; font-weight: 800; color: var(--text-primary, #1a1a2e); margin: 0 0 4px; letter-spacing: -0.02em; }
 .sa-page-subtitle { color: var(--text-muted, #8b8fa3); font-size: 0.85rem; margin: 0; }
+
+.sa-header-actions { display: flex; gap: 12px; align-items: center; }
+.search-bar-mod {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-surface, #fff); border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 10px; padding: 0 14px; height: 38px;
+}
+.search-bar-mod svg { width: 16px; height: 16px; color: var(--text-muted, #94a3b8); }
+.search-bar-mod input {
+  border: none; outline: none; background: transparent; height: 100%;
+  font-family: inherit; font-size: 0.85rem; color: var(--text-primary, #1a1a2e);
+  width: 200px;
+}
+.search-bar-mod input::placeholder { color: var(--text-muted, #94a3b8); }
+
+.btn-primary {
+  display: flex; align-items: center; gap: 8px; padding: 0 16px; height: 38px;
+  background: var(--accent, #1e3c72); color: white; border: none; border-radius: 10px;
+  font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  transition: all 0.2s; box-shadow: 0 4px 12px rgba(30, 60, 114, 0.2);
+}
+.btn-primary svg { width: 16px; height: 16px; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(30, 60, 114, 0.3); background: #2a5298; }
 
 .sa-module-stats {
   display: flex; gap: 16px; margin-bottom: 24px;
@@ -152,6 +308,49 @@ const toggleModule = (mod) => { mod.enabled = !mod.enabled; if (mod.enabled) mod
 .sa-toggle input:checked + .sa-toggle-slider:before { transform: translateX(18px); }
 
 .sa-toggle-label { font-size: 0.78rem; font-weight: 500; color: var(--text-muted); }
+
+/* Card Actions */
+.sa-module-top-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.card-actions-mini { display: flex; gap: 4px; }
+.card-menu-btn {
+  width: 28px; height: 28px; border: none; background: transparent; border-radius: 6px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--text-label, #b0b4c4); transition: all 0.2s;
+}
+.card-menu-btn svg { width: 14px; height: 14px; }
+.card-menu-btn.edit:hover { background: var(--bg-hover, #f1f5f9); color: var(--accent, #1e3c72); }
+.card-menu-btn.delete:hover { background: #fee2e2; color: #ef4444; }
+
+/* Empty state */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted); gap: 12px; }
+.empty-state svg { width: 48px; height: 48px; opacity: 0.5; }
+
+/* Modal Styles */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(4px); }
+.modal-content { background: var(--bg-surface, #fff); width: 100%; max-width: 500px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); overflow: hidden; display: flex; flex-direction: column; }
+.modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: space-between; align-items: center; }
+.modal-header h2 { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+.close-btn { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; transition: color 0.2s; line-height: 1; }
+.close-btn:hover { color: #ef4444; }
+.modal-body { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
+.form-group input, .form-group select, .form-group textarea {
+  padding: 10px 14px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; outline: none; font-family: inherit; font-size: 0.9rem; background: var(--bg-input, #f8fafc); color: var(--text-primary); transition: all 0.2s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); background: var(--bg-surface, #fff); box-shadow: 0 0 0 3px rgba(30,60,114,0.1); }
+.form-group textarea { resize: vertical; min-height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.color-picker-wrapper { display: flex; align-items: center; gap: 10px; background: var(--bg-input, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 4px 10px; }
+.color-picker-input { -webkit-appearance: none; border: none; width: 28px; height: 28px; border-radius: 4px; padding: 0; cursor: pointer; background: none; }
+.color-picker-input::-webkit-color-swatch-wrapper { padding: 0; }
+.color-picker-input::-webkit-color-swatch { border: none; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.color-hex { font-family: monospace; font-size: 0.85rem; color: var(--text-secondary); }
+
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-color, #e2e8f0); display: flex; justify-content: flex-end; gap: 12px; background: var(--bg-input, #f8fafc); }
+.btn-outline { padding: 0 16px; height: 38px; background: transparent; border: 1px solid var(--border-color, #e2e8f0); border-radius: 10px; color: var(--text-secondary); font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-outline:hover { background: var(--bg-hover, #f1f5f9); color: var(--text-primary); }
 
 @media (max-width: 1024px) { .sa-module-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .sa-module-grid { grid-template-columns: 1fr; } .sa-module-stats { flex-direction: column; } }
