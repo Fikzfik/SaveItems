@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -14,7 +15,8 @@ const router = createRouter({
     {
       path: '/login',
       name: 'Login',
-      component: () => import('../components/Login.vue')
+      component: () => import('../components/Login.vue'),
+      meta: { guestOnly: true }
     },
     {
       path: '/verify-otp',
@@ -24,27 +26,32 @@ const router = createRouter({
     {
       path: '/onboarding',
       name: 'Onboarding',
-      component: () => import('../views/auth/OnboardingView.vue')
+      component: () => import('../views/auth/OnboardingView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/home',
       name: 'UserHome',
-      component: () => import('../views/UserHomeView.vue')
+      component: () => import('../views/UserHomeView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/subscribe',
       name: 'Subscribe',
-      component: () => import('../views/SubscriptionView.vue')
+      component: () => import('../views/SubscriptionView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/payment',
       name: 'Payment',
-      component: () => import('../views/PaymentView.vue')
+      component: () => import('../views/PaymentView.vue'),
+      meta: { requiresAuth: true }
     },
     {
       path: '/dashboard',
       name: 'Dashboard',
       component: () => import('../layout/DashboardLayout.vue'),
+      meta: { requiresAuth: true },
       children: [
         {
           path: '',
@@ -69,12 +76,14 @@ const router = createRouter({
         {
           path: 'inventori',
           name: 'Inventori',
-          component: () => import('../views/admin/InventoriView.vue')
+          component: () => import('../views/admin/InventoriView.vue'),
+          meta: { requiredModule: 'inventori' }
         },
         {
           path: 'transaksi',
           name: 'Transaksi',
-          component: () => import('../views/admin/TransaksiView.vue')
+          component: () => import('../views/admin/TransaksiView.vue'),
+          meta: { requiredModule: 'transaksi' }
         },
         {
           path: 'user',
@@ -92,6 +101,7 @@ const router = createRouter({
       path: '/superadmin',
       name: 'SuperAdmin',
       component: () => import('../layout/SuperAdminLayout.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
       children: [
         {
           path: '',
@@ -141,6 +151,32 @@ const router = createRouter({
       ]
     }
   ]
+})
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  
+  // Authentication check
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    return next('/login')
+  }
+
+  // Guest only check (e.g., login page)
+  if (to.meta.guestOnly && authStore.isAuthenticated) {
+    return next('/home')
+  }
+
+  // Admin only check
+  if (to.meta.requiresAdmin && !authStore.isSuperAdmin) {
+    return next('/home') // Redirect to normal home if not admin
+  }
+
+  // Module subscription check
+  if (to.meta.requiredModule && !authStore.hasModule(to.meta.requiredModule)) {
+    return next('/subscribe') // Redirect to sub page if no module access
+  }
+
+  next()
 })
 
 export default router

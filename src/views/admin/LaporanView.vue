@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const selectedPeriod = ref('bulan-ini')
 const selectedCategory = ref('semua')
@@ -54,6 +54,28 @@ const topItems = ref([
 ])
 
 const getTrendIcon = (trend) => trend
+
+// Simulate reactive backend filtering
+watch([selectedPeriod, selectedCategory], () => {
+  const multiplier = selectedPeriod.value === 'minggu-ini' ? 0.3 : 
+                     selectedPeriod.value === 'hari-ini' ? 0.05 : 1;
+                     
+  const baseTtx = Math.floor((150 + Math.random() * 200) * multiplier);
+  
+  summaryStats.value = {
+    totalTransaksi: baseTtx,
+    totalBarangMasuk: Math.floor(baseTtx * 5.7),
+    totalBarangKeluar: Math.floor(baseTtx * 3.4),
+    totalNilai: `Rp ${(baseTtx * 0.01).toFixed(1)}M`,
+    perubahan: `${Math.random() > 0.3 ? '+' : '-'}${Math.floor(Math.random() * 25)}%`
+  }
+  
+  weeklyData.value = weeklyData.value.map(d => {
+    const masuk = Math.floor(Math.random() * 60 * multiplier) + 10;
+    const keluar = Math.floor(masuk * 0.6);
+    return { ...d, masuk, keluar, value: masuk + keluar };
+  })
+})
 </script>
 
 <template>

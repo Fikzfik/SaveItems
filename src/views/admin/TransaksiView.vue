@@ -50,7 +50,20 @@ const summaryStats = computed(() => {
   }
 })
 
-const showModal = ref(false)
+const showAddModal = ref(false)
+const showViewModal = ref(false)
+const selectedTrx = ref(null)
+
+const viewTransaction = (trx) => {
+  selectedTrx.value = trx
+  showViewModal.value = true
+}
+
+const deleteTransaction = (id) => {
+  if (confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
+    transactions.value = transactions.value.filter(t => t.id !== id)
+  }
+}
 
 const newTrx = ref({
   nama: '',
@@ -82,7 +95,7 @@ const addTransaction = () => {
     catatan: newTrx.value.catatan
   })
 
-  showModal.value = false
+  showAddModal.value = false
   newTrx.value = { nama: '', tipe: 'Masuk', jumlah: 1, user: '', departemen: 'IT', catatan: '' }
 }
 </script>
@@ -221,10 +234,10 @@ const addTransaction = () => {
               <td class="td-catatan">{{ trx.catatan }}</td>
               <td>
                 <div class="action-btns">
-                  <button class="act-btn act-view" title="Detail">
+                  <button class="act-btn act-view" title="Detail" @click="viewTransaction(trx)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   </button>
-                  <button class="act-btn act-delete" title="Hapus">
+                  <button class="act-btn act-delete" title="Hapus" @click="deleteTransaction(trx.id)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
                 </div>
@@ -245,7 +258,7 @@ const addTransaction = () => {
   </div>
 
   <!-- Floating Action Button -->
-  <button class="fab-btn" @click="showModal = true" title="Tambah Transaksi">
+  <button class="fab-btn" @click="showAddModal = true" title="Tambah Transaksi">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <line x1="12" y1="5" x2="12" y2="19"></line>
       <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -253,11 +266,11 @@ const addTransaction = () => {
   </button>
 
   <!-- Modal Tambah Transaksi -->
-  <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
+  <div class="modal-overlay" v-if="showAddModal" @click.self="showAddModal = false">
     <div class="modal-content">
       <div class="modal-header">
         <h2>Catat Transaksi Baru</h2>
-        <button class="close-btn" @click="showModal = false">&times;</button>
+        <button class="close-btn" @click="showAddModal = false">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -300,8 +313,52 @@ const addTransaction = () => {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-outline" @click="showModal = false">Batal</button>
+        <button class="btn-outline" @click="showAddModal = false">Batal</button>
         <button class="btn-primary" @click="addTransaction">Simpan Transaksi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detail Transaksi -->
+  <div class="modal-overlay" v-if="showViewModal" @click.self="showViewModal = false">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Detail Transaksi</h2>
+        <button class="close-btn" @click="showViewModal = false">&times;</button>
+      </div>
+      <div class="modal-body" v-if="selectedTrx">
+        <div class="detail-row">
+          <span class="detail-label">ID Transaksi</span>
+          <span class="detail-val">{{ selectedTrx.id }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Barang</span>
+          <span class="detail-val">{{ selectedTrx.nama }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Jumlah & Tipe</span>
+          <span class="detail-val">
+            {{ selectedTrx.jumlah }} unit 
+            <span class="status-badge" :class="getStatusClass(selectedTrx.tipe)">
+              {{ selectedTrx.tipe }}
+            </span>
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Oleh</span>
+          <span class="detail-val">{{ selectedTrx.user }} ({{ selectedTrx.departemen }})</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Waktu</span>
+          <span class="detail-val">{{ selectedTrx.tanggal }} - {{ selectedTrx.waktu }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Catatan</span>
+          <span class="detail-val">{{ selectedTrx.catatan || '-' }}</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" style="width: 100%; justify-content: center" @click="showViewModal = false">Tutup</button>
       </div>
     </div>
   </div>
@@ -800,14 +857,22 @@ tbody tr:last-child td { border-bottom: none; }
   background: linear-gradient(135deg, #1e3c72, #2a5298);
   color: #fff;
   border: none;
-  box-shadow: 0 4px 15px rgba(30, 60, 114, 0.4);
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(30,60,114,0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  z-index: 900;
+  transition: all 0.2s;
+  z-index: 90;
 }
+.fab-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(30,60,114,0.4); }
+.fab-btn svg { width: 24px; height: 24px; }
+
+/* Detail Row in View Modal */
+.detail-row { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-light, #f0f2f5); padding: 12px 0; gap: 16px; }
+.detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+.detail-label { color: var(--text-muted, #8b8fa3); font-size: 0.82rem; white-space: nowrap; }
+.detail-val { font-weight: 600; font-size: 0.88rem; text-align: right; color: var(--text-primary, #1a1a2e); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 
 .fab-btn:hover {
   transform: scale(1.1) rotate(90deg);

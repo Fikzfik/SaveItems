@@ -1,6 +1,10 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import gsap from 'gsap'
+import ScrollTrigger from 'gsap/ScrollTrigger'
+
+gsap.registerPlugin(ScrollTrigger)
 
 const router = useRouter()
 const mobileMenuOpen = ref(false)
@@ -33,7 +37,7 @@ const apps = [
   { id: 5, name: 'Point of Sale', desc: 'Kasir digital, transaksi cepat, dan laporan penjualan.', icon: 'pos', color: '#0ea5e9', installed: true,
     detail: 'Sistem kasir modern yang cepat dan mudah digunakan. Mendukung multi-outlet, berbagai metode pembayaran, dan laporan penjualan real-time.',
     features: ['Kasir touchscreen', 'Multi-outlet', 'Berbagai metode bayar', 'Cetak struk otomatis', 'Diskon & promo', 'Laporan penjualan'],
-    highlights: [{ val: '<3 detik', label: 'Per transaksi' }, { val: 'Offline', label: 'Mode tersedia' }, { val: '24/7', label: 'Operasional' }] },
+    highlights: [{ val: '< 3 detik', label: 'Per transaksi' }, { val: 'Offline', label: 'Mode tersedia' }, { val: '24/7', label: 'Operasional' }] },
   { id: 6, name: 'Project', desc: 'Task board, milestone, timeline, dan resource planning.', icon: 'project', color: '#8b5cf6', installed: false,
     detail: 'Kelola proyek dari awal hingga selesai dengan Kanban board, Gantt chart, dan timesheet. Kolaborasi tim jadi lebih mudah dan terstruktur.',
     features: ['Kanban board', 'Gantt chart & timeline', 'Timesheet tracking', 'Milestone & deadline', 'Kolaborasi tim', 'Budget tracking'],
@@ -53,10 +57,10 @@ const apps = [
 ]
 
 const stats = [
-  { value: '3,000+', label: 'Bisnis Aktif' },
-  { value: '1.2M', label: 'Transaksi/Bulan' },
-  { value: '99.9%', label: 'Uptime' },
-  { value: '9+', label: 'Modul Tersedia' },
+  { value: '3000', suffix: '+', label: 'Bisnis Aktif' },
+  { value: '1.2', suffix: 'M', label: 'Transaksi/Bulan' },
+  { value: '99', suffix: '.9%', label: 'Uptime' },
+  { value: '9', suffix: '+', label: 'Modul Tersedia' },
 ]
 
 const testimonials = [
@@ -70,6 +74,67 @@ const pricingPlans = [
   { name: 'Professional', price: 'Rp 499K', period: '/bulan', desc: 'Untuk bisnis yang sedang berkembang', features: ['5 modul pilihan', '15 user', 'Unlimited item', 'Analitik lanjutan', 'Priority support'], cta: 'Pilih Professional', popular: true },
   { name: 'Enterprise', price: 'Custom', period: '', desc: 'Untuk perusahaan besar', features: ['Semua modul', 'Unlimited user', 'Dedicated server', 'Custom integration', 'Account manager', 'SLA 99.99%'], cta: 'Hubungi Sales', popular: false },
 ]
+
+// GSAP Animations
+onMounted(() => {
+  // 1. Navbar Drop
+  gsap.from('.nav', { y: -100, opacity: 0, duration: 1, ease: 'power3.out' })
+
+  // 2. Hero Content Stagger
+  const heroTl = gsap.timeline({ defaults: { duration: 0.8, ease: 'power3.out' } })
+  heroTl.from('.hero-badge', { y: 20, opacity: 0 }, 0.2)
+        .from('.hero-text h1', { y: 30, opacity: 0 }, 0.4)
+        .from('.hero-sub', { y: 20, opacity: 0 }, 0.6)
+        .from('.hero-btns', { y: 20, opacity: 0 }, 0.8)
+        .from('.hero-trust', { y: 20, opacity: 0 }, 1.0)
+        
+  // 3. Floating App Grid
+  gsap.from('.hero-app-card', {
+    y: 50,
+    opacity: 0,
+    scale: 0.9,
+    duration: 1,
+    stagger: 0.1,
+    ease: 'back.out(1.7)',
+    delay: 0.5
+  })
+
+  // 4. ScrollTriggers setup
+  // Stats Counters
+  gsap.utils.toArray('.sb-val-num').forEach(el => {
+    gsap.fromTo(el, 
+      { innerText: 0 }, 
+      {
+        innerText: el.dataset.val,
+        duration: 2,
+        ease: 'power2.out',
+        snap: { innerText: el.dataset.val.includes('.') ? 0.1 : 1 },
+        scrollTrigger: {
+          trigger: '.stats-bar',
+          start: 'top 85%'
+        }
+      }
+    )
+  })
+
+  // Fade In Sections (Apps, Features, Previews)
+  const fadeUpSections = ['.apps-section .section-head', '.apps-grid .app-card', '.features-section .section-head', '.feature-card', '.preview-section .section-head', '.preview-box']
+  
+  fadeUpSections.forEach(selector => {
+    ScrollTrigger.batch(selector, {
+      start: 'top 85%',
+      onEnter: batch => gsap.fromTo(batch, 
+        { y: 50, opacity: 0 }, 
+        { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out' }
+      ),
+      once: true
+    })
+  })
+})
+
+onUnmounted(() => {
+  ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+})
 </script>
 
 <template>
@@ -143,7 +208,9 @@ const pricingPlans = [
     <section class="stats-bar">
       <div class="stats-bar-inner">
         <div class="sb-stat" v-for="s in stats" :key="s.label">
-          <span class="sb-val">{{ s.value }}</span>
+          <span class="sb-val">
+            <span class="sb-val-num" :data-val="s.value">{{ s.value }}</span>{{ s.suffix }}
+          </span>
           <span class="sb-label">{{ s.label }}</span>
         </div>
       </div>

@@ -3,19 +3,90 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import bgImage from '@/assets/images/login-bg.png'
 
+import { useAuthStore } from '../stores/auth'
+
 const router = useRouter()
+const authStore = useAuthStore()
 const isSignUp = ref(false)
+
+const name = ref('')
+const email = ref('')
+const password = ref('')
+const isLoading = ref(false)
+const errorMessage = ref('')
+const baseURL = 'http://127.0.0.1:3000/api' // Sesuaikan dengan port backend-mu
 
 const toggleMode = () => {
   isSignUp.value = !isSignUp.value
+  errorMessage.value = ''
+  email.value = ''
+  password.value = ''
+  name.value = ''
 }
 
-const handleSignIn = () => {
-  router.push('/home')
+const handleSignIn = async () => {
+  errorMessage.value = ''
+  isLoading.value = true
+  try {
+    const res = await fetch(`${baseURL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value
+      })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || data.message || 'Login failed')
+    
+    // Use Pinia store to save auth data
+    authStore.setAuth({
+      user: data.user,
+      token: data.token
+    })
+    
+    // Redirect logic: Superadmin goes to /superadmin, others to /home
+    if (authStore.isSuperAdmin) {
+      router.push('/superadmin')
+    } else {
+      router.push('/home')
+    }
+  } catch (error) {
+    errorMessage.value = error.message
+  } finally {
+    isLoading.value = false
+  }
 }
 
-const handleSignUp = () => {
-  router.push('/verify-otp')
+const handleSignUp = async () => {
+  errorMessage.value = ''
+  isLoading.value = true
+  try {
+    const res = await fetch(`${baseURL}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: name.value,
+        email: email.value,
+        password: password.value
+      })
+    })
+    
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.message || 'Sign up failed')
+    }
+    
+    router.push('/verify-otp')
+  } catch (error) {
+    errorMessage.value = error.message
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // Add/remove body class for login-specific layout
@@ -52,24 +123,29 @@ onBeforeUnmount(() => {
         </div>
         <span class="divider-text">or use your email for registration</span>
 
+        <!-- Error Message -->
+        <div v-if="errorMessage && isSignUp" class="error-text">{{ errorMessage }}</div>
+
         <!-- Floating Label Inputs -->
         <div class="float-group">
           <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <input type="text" id="signup-name" placeholder=" " />
+          <input type="text" id="signup-name" placeholder=" " v-model="name" />
           <label for="signup-name">Full Name</label>
         </div>
         <div class="float-group">
           <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          <input type="email" id="signup-email" placeholder=" " />
+          <input type="email" id="signup-email" placeholder=" " v-model="email" />
           <label for="signup-email">Email</label>
         </div>
         <div class="float-group">
           <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <input type="password" id="signup-pass" placeholder=" " />
+          <input type="password" id="signup-pass" placeholder=" " v-model="password" />
           <label for="signup-pass">Password</label>
         </div>
 
-        <button class="btn btn-primary" @click="handleSignUp">Sign Up</button>
+        <button class="btn btn-primary" :disabled="isLoading" @click="handleSignUp">
+          {{ isLoading ? 'Loading...' : 'Sign Up' }}
+        </button>
         <p class="mobile-toggle">
           Already have an account? <span @click="toggleMode">Sign In</span>
         </p>
@@ -96,15 +172,18 @@ onBeforeUnmount(() => {
         </div>
         <span class="divider-text">or use your account</span>
 
+        <!-- Error Message -->
+        <div v-if="errorMessage && !isSignUp" class="error-text">{{ errorMessage }}</div>
+
         <!-- Floating Label Inputs -->
         <div class="float-group">
           <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          <input type="email" id="signin-email" placeholder=" " />
+          <input type="email" id="signin-email" placeholder=" " v-model="email" />
           <label for="signin-email">Email</label>
         </div>
         <div class="float-group">
           <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <input type="password" id="signin-pass" placeholder=" " />
+          <input type="password" id="signin-pass" placeholder=" " v-model="password" />
           <label for="signin-pass">Password</label>
         </div>
 
@@ -117,7 +196,9 @@ onBeforeUnmount(() => {
           </label>
           <a href="#" class="forgot-link">Forgot password?</a>
         </div>
-        <button class="btn btn-primary" @click="handleSignIn">Sign In</button>
+        <button class="btn btn-primary" :disabled="isLoading" @click="handleSignIn">
+          {{ isLoading ? 'Loading...' : 'Sign In' }}
+        </button>
         <p class="mobile-toggle">
           Don't have an account? <span @click="toggleMode">Sign Up</span>
         </p>
@@ -359,6 +440,20 @@ onBeforeUnmount(() => {
   flex: 1;
   height: 1px;
   background: linear-gradient(90deg, transparent, #ddd, transparent);
+}
+
+.error-text {
+  color: #ff4d4f;
+  font-size: 0.8rem;
+  margin-bottom: 15px;
+  background-color: #fff2f0;
+  border: 1px solid #ffccc7;
+  padding: 8px 12px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 300px;
+  text-align: left;
+  box-sizing: border-box;
 }
 
 /* ====== FLOATING LABEL INPUTS ====== */

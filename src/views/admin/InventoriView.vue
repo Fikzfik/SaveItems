@@ -57,7 +57,10 @@ const totalNilai = computed(() => {
   return formatRupiah(val)
 })
 
-const newItem = ref({
+const isEditing = ref(false)
+const editingId = ref(null)
+
+const currentItem = ref({
   nama: '',
   kategori: 'Elektronik',
   stok: 0,
@@ -65,23 +68,49 @@ const newItem = ref({
   harga: 0
 })
 
-const addItem = () => {
-  if (!newItem.value.nama || !newItem.value.stok) return
+const openAddModal = () => {
+  isEditing.value = false
+  editingId.value = null
+  currentItem.value = { nama: '', kategori: 'Elektronik', stok: 0, lokasi: '', harga: 0 }
+  showModal.value = true
+}
+
+const editItem = (item) => {
+  isEditing.value = true
+  editingId.value = item.id
+  currentItem.value = { ...item }
+  showModal.value = true
+}
+
+const deleteItem = (id) => {
+  if (confirm('Apakah Anda yakin ingin menghapus barang ini?')) {
+    items.value = items.value.filter(i => i.id !== id)
+  }
+}
+
+const saveItem = () => {
+  if (!currentItem.value.nama || !currentItem.value.stok) return
   
-  const idStr = (items.value.length + 1).toString().padStart(3, '0')
-  items.value.unshift({
-    id: `INV-${idStr}`,
-    nama: newItem.value.nama,
-    kategori: newItem.value.kategori,
-    stok: newItem.value.stok,
-    tersedia: newItem.value.stok, // Asumsi awal tersedia semua
-    lokasi: newItem.value.lokasi || 'Gudang A',
-    kondisi: 'Baik',
-    harga: newItem.value.harga
-  })
+  if (isEditing.value) {
+    const index = items.value.findIndex(i => i.id === editingId.value)
+    if (index !== -1) {
+      items.value[index] = { ...items.value[index], ...currentItem.value }
+    }
+  } else {
+    const idStr = (items.value.length + 1).toString().padStart(3, '0')
+    items.value.unshift({
+      id: `INV-${idStr}`,
+      nama: currentItem.value.nama,
+      kategori: currentItem.value.kategori,
+      stok: currentItem.value.stok,
+      tersedia: currentItem.value.stok,
+      lokasi: currentItem.value.lokasi || 'Gudang A',
+      kondisi: 'Baik',
+      harga: currentItem.value.harga
+    })
+  }
   
   showModal.value = false
-  newItem.value = { nama: '', kategori: 'Elektronik', stok: 0, lokasi: '', harga: 0 }
 }
 </script>
 
@@ -98,7 +127,7 @@ const addItem = () => {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export
         </button>
-        <button class="btn-primary" @click="showModal = true">
+        <button class="btn-primary" @click="openAddModal">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Tambah Barang
         </button>
@@ -191,10 +220,10 @@ const addItem = () => {
               <td class="td-harga">{{ formatRupiah(item.harga) }}</td>
               <td>
                 <div class="action-btns">
-                  <button class="act-btn act-edit" title="Edit">
+                  <button class="act-btn act-edit" title="Edit" @click="editItem(item)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
-                  <button class="act-btn act-delete" title="Hapus">
+                  <button class="act-btn act-delete" title="Hapus" @click="deleteItem(item.id)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
                 </div>
@@ -218,40 +247,40 @@ const addItem = () => {
   <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Tambah Barang Baru</h2>
+        <h2>{{ isEditing ? 'Edit Barang' : 'Tambah Barang Baru' }}</h2>
         <button class="close-btn" @click="showModal = false">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
           <label>Nama Barang</label>
-          <input v-model="newItem.nama" type="text" placeholder="Contoh: Laptop Dell Latitude" />
+          <input v-model="currentItem.nama" type="text" placeholder="Contoh: Laptop Dell Latitude" />
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>Kategori</label>
-            <select v-model="newItem.kategori">
+            <select v-model="currentItem.kategori">
               <option v-for="cat in categories.filter(c => c !== 'Semua')" :key="cat" :value="cat">{{ cat }}</option>
             </select>
           </div>
           <div class="form-group">
             <label>Stok Awal</label>
-            <input v-model.number="newItem.stok" type="number" min="0" />
+            <input v-model.number="currentItem.stok" type="number" min="0" />
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>Lokasi</label>
-            <input v-model="newItem.lokasi" type="text" placeholder="Contoh: Gudang A" />
+            <input v-model="currentItem.lokasi" type="text" placeholder="Contoh: Gudang A" />
           </div>
           <div class="form-group">
             <label>Harga Satuan</label>
-            <input v-model.number="newItem.harga" type="number" min="0" />
+            <input v-model.number="currentItem.harga" type="number" min="0" />
           </div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-outline" @click="showModal = false">Batal</button>
-        <button class="btn-primary" @click="addItem">Simpan Barang</button>
+        <button class="btn-primary" @click="saveItem">{{ isEditing ? 'Simpan Perubahan' : 'Simpan Barang' }}</button>
       </div>
     </div>
   </div>

@@ -1,8 +1,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const selectedApp = ref(null)
 const showModal = ref(false)
 
@@ -55,7 +57,10 @@ const stats = [
 ]
 
 const goSubscribe = () => router.push('/subscribe')
-const handleLogout = () => router.push('/')
+const handleLogout = () => {
+  authStore.clearAuth()
+  router.push('/login')
+}
 </script>
 
 <template>

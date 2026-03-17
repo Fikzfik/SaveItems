@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const route = useRoute()
 const isSidebarOpen = ref(true)
 const isMobileSidebarOpen = ref(false)
@@ -63,7 +65,8 @@ const toggleDarkMode = () => {
 }
 
 const handleLogout = () => {
-  router.push('/')
+  authStore.clearAuth()
+  router.push('/login')
 }
 
 const closeDropdowns = (e) => {
