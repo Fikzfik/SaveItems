@@ -19,6 +19,12 @@ const router = createRouter({
       meta: { guestOnly: true }
     },
     {
+      path: '/register',
+      name: 'Register',
+      component: () => import('../views/auth/RegisterView.vue'),
+      meta: { guestOnly: true }
+    },
+    {
       path: '/verify-otp',
       name: 'VerifyOtp',
       component: () => import('../views/auth/VerifyOtpView.vue')
@@ -61,7 +67,8 @@ const router = createRouter({
         {
           path: 'modules',
           name: 'ModulesList',
-          component: () => import('../views/admin/ModulesListView.vue')
+          component: () => import('../views/admin/ModulesListView.vue'),
+          meta: { requiredModule: 'any' }
         },
         {
           path: 'settings',
@@ -163,12 +170,12 @@ router.beforeEach((to, from, next) => {
 
   // Guest only check (e.g., login page)
   if (to.meta.guestOnly && authStore.isAuthenticated) {
-    return next('/home')
+    return next('/dashboard')
   }
 
   // Admin only check
   if (to.meta.requiresAdmin && !authStore.isSuperAdmin) {
-    return next('/home') // Redirect to normal home if not admin
+    return next('/dashboard') // Redirect back to normal dashboard if not admin
   }
 
   // Module subscription check

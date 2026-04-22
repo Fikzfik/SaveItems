@@ -7,43 +7,44 @@ const router = useRouter()
 const selectedPlan = ref(null)
 const isActivating = ref(false)
 
-const plans = [
-  {
-    id: 'monthly',
-    name: 'Bulanan',
-    price: 'Rp 999K',
-    period: '/bulan',
-    desc: 'Fleksibel, bayar per bulan',
-    savings: null,
-    features: [
-      'Semua modul tersedia',
-      'Unlimited user',
-      'Unlimited item',
-      'Analitik lengkap',
-      'Priority support',
-      'Custom integration',
-    ],
-  },
-  {
-    id: 'yearly',
-    name: 'Tahunan',
-    price: 'Rp 10.000K',
-    priceMonthly: 'Rp 833K/bulan',
-    period: '/tahun',
-    desc: 'Hemat lebih banyak per tahun',
-    savings: 'Hemat 17%',
-    popular: true,
-    features: [
-      'Semua modul tersedia',
-      'Unlimited user',
-      'Unlimited item',
-      'Analitik lengkap',
-      'Priority support',
-      'Custom integration',
-      'Account manager',
-    ],
-  },
-]
+const plans = ref([])
+const fetchPlans = async () => {
+  try {
+    const res = await fetch('http://localhost:3000/api/plans')
+    const data = await res.json()
+    if (res.ok) {
+      plans.value = data.data.map(p => {
+        const features = []
+        if (p.feature_modules === 999) features.push('Semua modul tersedia')
+        else if (p.feature_modules > 0) features.push(`Akses ${p.feature_modules} modul`)
+        
+        if (p.max_user === 999) features.push('Unlimited user')
+        else features.push(`Max ${p.max_user} User`)
+        
+        features.push(`${p.storage_limit_mb} MB Storage`)
+        
+        if (p.feature_reports) features.push('Analitik & Laporan')
+        if (p.feature_api) features.push('Akses API & Integrasi')
+        if (p.feature_priority_support) features.push('Priority support')
+        if (p.feature_custom_integration) features.push('Custom integration')
+        if (p.feature_account_manager) features.push('Account manager')
+
+        return {
+          id: p.id_plan,
+          name: p.name,
+          price: p.price === 0 ? 'Gratis' : `Rp ${p.price.toFixed(2)}`,
+          period: p.name === 'Enterprise' ? '/bulan' : '/bulan', // Adjust if needed
+          desc: p.description,
+          popular: p.name === 'Business',
+          features: features
+        }
+      })
+    }
+  } catch (err) {
+    console.error('Failed to fetch plans:', err)
+  }
+}
+fetchPlans()
 
 const allModules = [
   { name: 'Inventory', color: '#1e3c72', icon: 'inventory' },

@@ -1,17 +1,21 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const otpInputs = ref(['', '', '', '', '', ''])
 const isVerifying = ref(false)
 const isResending = ref(false)
 const countdown = ref(60)
-const email = ref('user@example.com')
+const email = ref(localStorage.getItem('reg_email') || 'user@example.com')
+const baseURL = 'http://127.0.0.1:3000/api'
 let timer = null
 
 const startCountdown = () => {
   countdown.value = 60
+  if (timer) clearInterval(timer)
   timer = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) clearInterval(timer)
@@ -44,13 +48,41 @@ const handlePaste = (event) => {
   if (next) next.focus()
 }
 
-const verifyOtp = () => {
+const verifyOtp = async () => {
   const code = otpInputs.value.join('')
   if (code.length === 6) {
     isVerifying.value = true
-    setTimeout(() => {
-      router.push('/onboarding')
-    }, 1500)
+    try {
+      const res = await fetch(`${baseURL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: email.value,
+          otp: code
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Verification failed')
+      console.log('Verification Success:', data)
+      
+      authStore.setAuth({
+        user: data.user,
+        token: data.token
+      })
+      
+      console.log('Auth Store updated, deciding next step...')
+      if (data.user.id_company) {
+        router.push('/home')
+      } else {
+        router.push('/onboarding')
+      }
+    } catch (error) {
+      alert(error.message)
+    } finally {
+      isVerifying.value = false
+    }
   }
 }
 

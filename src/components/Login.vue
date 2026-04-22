@@ -14,6 +14,8 @@ const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
+const showPassword = ref(false)
+const showSignUpPassword = ref(false)
 const baseURL = 'http://127.0.0.1:3000/api' // Sesuaikan dengan port backend-mu
 
 const toggleMode = () => {
@@ -27,6 +29,11 @@ const toggleMode = () => {
 const handleSignIn = async () => {
   errorMessage.value = ''
   isLoading.value = true
+  if (!email.value || !password.value) {
+    errorMessage.value = 'Email and password are required'
+    isLoading.value = false
+    return
+  }
   try {
     const res = await fetch(`${baseURL}/auth/login`, {
       method: 'POST',
@@ -47,9 +54,14 @@ const handleSignIn = async () => {
       token: data.token
     })
     
-    // Redirect logic: Superadmin goes to /superadmin, others to /home
+    // Redirect logic:
+    // 1. Superadmin (role 0 or specific flag) goes to /superadmin
+    // 2. Users without company go to /onboarding
+    // 3. Others go to /home
     if (authStore.isSuperAdmin) {
       router.push('/superadmin')
+    } else if (!data.user.id_company) {
+      router.push('/onboarding')
     } else {
       router.push('/home')
     }
@@ -63,8 +75,13 @@ const handleSignIn = async () => {
 const handleSignUp = async () => {
   errorMessage.value = ''
   isLoading.value = true
+  if (!name.value || !email.value || !password.value) {
+    errorMessage.value = 'All fields are required'
+    isLoading.value = false
+    return
+  }
   try {
-    const res = await fetch(`${baseURL}/users`, {
+    const res = await fetch(`${baseURL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -72,15 +89,15 @@ const handleSignUp = async () => {
       body: JSON.stringify({
         name: name.value,
         email: email.value,
-        password: password.value
+        password: password.value,
+        phone: '' // Optional for the dual-form signup
       })
     })
     
-    if (!res.ok) {
-      const data = await res.json()
-      throw new Error(data.message || 'Sign up failed')
-    }
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || data.message || 'Sign up failed')
     
+    localStorage.setItem('reg_email', email.value)
     router.push('/verify-otp')
   } catch (error) {
     errorMessage.value = error.message
@@ -139,8 +156,12 @@ onBeforeUnmount(() => {
         </div>
         <div class="float-group">
           <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <input type="password" id="signup-pass" placeholder=" " v-model="password" />
+          <input :type="showSignUpPassword ? 'text' : 'password'" id="signup-pass" placeholder=" " v-model="password" />
           <label for="signup-pass">Password</label>
+          <button type="button" class="toggle-password" @click="showSignUpPassword = !showSignUpPassword" tabindex="-1">
+            <svg v-if="!showSignUpPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
         </div>
 
         <button class="btn btn-primary" :disabled="isLoading" @click="handleSignUp">
@@ -183,8 +204,12 @@ onBeforeUnmount(() => {
         </div>
         <div class="float-group">
           <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <input type="password" id="signin-pass" placeholder=" " v-model="password" />
+          <input :type="showPassword ? 'text' : 'password'" id="signin-pass" placeholder=" " v-model="password" />
           <label for="signin-pass">Password</label>
+          <button type="button" class="toggle-password" @click="showPassword = !showPassword" tabindex="-1">
+            <svg v-if="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
         </div>
 
 
@@ -494,6 +519,7 @@ onBeforeUnmount(() => {
   color: #333;
   transition: all 0.3s ease;
   box-sizing: border-box;
+  padding-right: 48px;
 }
 
 .float-group label {
@@ -530,6 +556,32 @@ onBeforeUnmount(() => {
 .float-group input:not(:placeholder-shown) {
   padding-top: 18px;
   padding-bottom: 6px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #b0b4c4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s;
+  z-index: 3;
+}
+
+.toggle-password:hover {
+  color: #1e3c72;
+}
+
+.toggle-password svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* ====== FORM ACTIONS ====== */

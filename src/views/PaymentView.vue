@@ -1,19 +1,40 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
 
 // Data dari query params
-const planId = ref(route.query.plan || 'monthly')
+const planId = ref(route.query.plan || '2')
 
-const plans = {
-  monthly: { name: 'All Access', price: 999000, priceLabel: 'Rp 999.000', period: '/bulan', periodLabel: 'Bulanan', color: '#1e3c72' },
-  yearly: { name: 'All Access', price: 10000000, priceLabel: 'Rp 10.000.000', period: '/tahun', periodLabel: 'Tahunan', color: '#1e3c72' },
+const plans = ref([])
+const fetchPlans = async () => {
+  try {
+    const res = await fetch('http://localhost:3000/api/plans')
+    const data = await res.json()
+    if (data.data) {
+      plans.value = data.data.map(p => ({
+        id: p.id_plan,
+        name: p.name,
+        price: p.price,
+        priceLabel: formatCurrency(p.price),
+        periodLabel: p.price === 0 ? 'Selamanya' : 'Bulanan',
+        color: p.id_plan === 1 ? '#8b8fa3' : (p.id_plan === 2 ? '#1e3c72' : (p.id_plan === 3 ? '#7c3aed' : '#dc2626'))
+      }))
+    }
+  } catch (err) {
+    console.error('Failed to fetch plans', err)
+  }
 }
 
-const currentPlan = computed(() => plans[planId.value] || plans.monthly)
+const currentPlan = computed(() => {
+  if (plans.value.length === 0) return { id: 0, name: 'Sedang memuat...', price: 0, priceLabel: '-', periodLabel: '-', color: '#eee' }
+  const id = parseInt(planId.value)
+  return plans.value.find(p => p.id === id) || plans.value[0]
+})
 
 // Payment method
 const paymentMethod = ref('card')
@@ -56,7 +77,10 @@ const currentBank = computed(() => banks.find(b => b.id === selectedBank.value))
 const tax = computed(() => Math.round(currentPlan.value.price * 0.11))
 const total = computed(() => currentPlan.value.price + tax.value)
 
-const formatCurrency = (val) => 'Rp ' + val.toLocaleString('id-ID')
+const formatCurrency = (val) => {
+  if (val === undefined || val === null) return 'Rp 0'
+  return 'Rp ' + val.toLocaleString('id-ID')
+}
 
 // Card number formatting
 const formatCardNumber = (e) => {
@@ -86,16 +110,45 @@ const canPay = computed(() => {
   return true
 })
 
-const processPayment = () => {
+const processPayment = async () => {
   if (!canPay.value || isProcessing.value) return
+  
+  if (!currentPlan.value || currentPlan.value.id === 0) {
+    alert('Plan belum terload dengan sempurna. Silakan tunggu sebentar atau muat ulang halaman.')
+    return
+  }
+
   isProcessing.value = true
-  setTimeout(() => {
+  console.log('Processing payment for plan:', currentPlan.value)
+  
+  try {
+    const res = await fetch('http://localhost:3000/api/companies/update-subscription', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      },
+      body: JSON.stringify({ id_plan: currentPlan.value.id })
+    })
+    
+    console.log('Payment response status:', res.status)
+    const data = await res.json()
+    console.log('Payment response data:', data)
+
+    if (!res.ok) throw new Error(data.message || 'Gagal update langganan')
+    
+    // Update store with new company/plan info directly
+    authStore.updateCompanyData(data.data)
+    
     isProcessing.value = false
     showSuccess.value = true
     setTimeout(() => {
       router.push('/dashboard')
     }, 2500)
-  }, 2500)
+  } catch (err) {
+    alert(err.message)
+    isProcessing.value = false
+  }
 }
 
 const goBack = () => {
@@ -103,6 +156,7 @@ const goBack = () => {
 }
 
 onMounted(() => {
+  fetchPlans()
   setTimeout(() => mounted.value = true, 100)
 })
 </script>

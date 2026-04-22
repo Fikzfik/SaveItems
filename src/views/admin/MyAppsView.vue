@@ -1,20 +1,32 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
 const router = useRouter()
 
-// Simulated user subscription data
-const subscription = ref({
-  plan: 'All Access',
-  status: 'Aktif',
-  renewDate: '15 Mar 2026',
+// Real user subscription data from authStore
+const subscription = computed(() => {
+  let renewDate = '-'
+  if (authStore.user?.subscription_end) {
+    const d = new Date(authStore.user.subscription_end)
+    if (!isNaN(d.getTime())) {
+      renewDate = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+    }
+  }
+  
+  return {
+    plan: authStore.user?.plan_name || 'Free Plan',
+    status: authStore.isSubscribed ? 'Aktif' : 'Non-Aktif',
+    renewDate
+  }
 })
 
-// All modules are active in All Access
-const activeModules = ref([
+// Modules display based on subscription status
+const allModulesPool = [
   { id: 1, name: 'Inventory', desc: 'Kelola stok, gudang, dan aset perusahaan.', icon: 'inventory', color: '#1e3c72', path: '/dashboard', stats: { label: 'Total Barang', value: '2,847' } },
-  { id: 2, name: 'HR & Payroll', desc: 'Karyawan, absensi, dan penggajian.', icon: 'hr', color: '#7c3aed', path: '/dashboard', stats: { label: 'Karyawan', value: '24' } },
+  { id: 2, name: 'HR & Payroll', desc: 'Karyawan, absensi, dan penggajian.', icon: 'hr', color: '#7c3aed', border: '#7c3aed', path: '/dashboard', stats: { label: 'Karyawan', value: '24' } },
   { id: 3, name: 'Akuntansi', desc: 'Pembukuan dan laporan keuangan.', icon: 'finance', color: '#059669', path: '/dashboard', stats: { label: 'Invoice Bulan Ini', value: '142' } },
   { id: 4, name: 'CRM', desc: 'Pelanggan dan pipeline penjualan.', icon: 'crm', color: '#ea580c', path: '/dashboard', stats: { label: 'Leads Aktif', value: '38' } },
   { id: 5, name: 'Point of Sale', desc: 'Kasir digital dan laporan penjualan.', icon: 'pos', color: '#0ea5e9', path: '/dashboard', stats: { label: 'Transaksi Hari Ini', value: '89' } },
@@ -22,22 +34,21 @@ const activeModules = ref([
   { id: 7, name: 'E-Commerce', desc: 'Toko online dan manajemen pesanan.', icon: 'ecommerce', color: '#f59e0b', path: '/dashboard', stats: { label: 'Pesanan Baru', value: '7' } },
   { id: 8, name: 'Helpdesk', desc: 'Tiket support dan knowledge base.', icon: 'helpdesk', color: '#06b6d4', path: '/dashboard', stats: { label: 'Tiket Terbuka', value: '12' } },
   { id: 9, name: 'Manufacturing', desc: 'BoM, work order, dan quality control.', icon: 'manufacturing', color: '#dc2626', path: '/dashboard', stats: { label: 'Work Order', value: '5' } },
-])
-
-const quickStats = [
-  { label: 'Modul Aktif', value: '9', color: '#1e3c72' },
-  { label: 'User Aktif', value: '8', color: '#7c3aed' },
-  { label: 'Transaksi Bulan ini', value: '1,247', color: '#059669' },
-  { label: 'Storage', value: '2.4 GB', color: '#ea580c' },
 ]
 
-const recentActivity = ref([
-  { module: 'Inventory', action: 'Barang masuk: Laptop Dell x15', time: '5 menit lalu', color: '#1e3c72' },
-  { module: 'POS', action: 'Transaksi penjualan #POS-2847', time: '12 menit lalu', color: '#0ea5e9' },
-  { module: 'Akuntansi', action: 'Invoice #INV-0142 dibuat', time: '30 menit lalu', color: '#059669' },
-  { module: 'Inventory', action: 'Stok minimum: Kabel HDMI', time: '1 jam lalu', color: '#1e3c72' },
-  { module: 'POS', action: 'Transaksi penjualan #POS-2846', time: '1 jam lalu', color: '#0ea5e9' },
+const activeModules = computed(() => {
+  if (authStore.isSubscribed) return allModulesPool
+  return [] // Or filter based on specific plan if needed
+})
+
+const quickStats = computed(() => [
+  { label: 'Modul Aktif', value: activeModules.value.length.toString(), color: '#1e3c72' },
+  { label: 'User Aktif', value: '1', color: '#7c3aed' },
+  { label: 'Transaksi Bulan ini', value: '0', color: '#059669' },
+  { label: 'Storage', value: '0 GB', color: '#ea580c' },
 ])
+
+const recentActivity = ref([]) // Empty for now until backend logs are connected
 
 const goModule = (mod) => router.push(mod.path)
 </script>
@@ -77,7 +88,7 @@ const goModule = (mod) => router.push(mod.path)
         <h2>🚀 Modul Aktif</h2>
         <span class="ma-count">All Access · {{ activeModules.length }} modul</span>
       </div>
-      <div class="ma-active-grid">
+      <div v-if="activeModules.length > 0" class="ma-active-grid">
         <div class="ma-module-card" v-for="mod in activeModules" :key="mod.id" :style="{ '--mc': mod.color }" @click="goModule(mod)">
           <div class="mmc-header">
             <div class="mmc-icon">
@@ -101,6 +112,12 @@ const goModule = (mod) => router.push(mod.path)
           </div>
           <div class="mmc-open">Buka Modul →</div>
         </div>
+      </div>
+      <div v-else class="ma-empty-state">
+        <div class="mes-icon">📭</div>
+        <h3>Belum ada modul aktif</h3>
+        <p>Silakan aktifkan trial atau pilih paket langganan untuk mulai menggunakan aplikasi.</p>
+        <button class="ma-btn-primary" @click="router.push('/home')">Aktifkan Sekarang</button>
       </div>
     </div>
 
@@ -170,39 +187,26 @@ const goModule = (mod) => router.push(mod.path)
 .mms-val { font-size: 1rem; font-weight: 800; color: var(--mc); }
 .mmc-open { font-size: 0.78rem; font-weight: 600; color: var(--mc); }
 
-/* Add Card */
-.ma-add-card { background: var(--bg-surface); border: 2px dashed var(--border-color); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; min-height: 200px; }
-.ma-add-card svg { width: 28px; height: 28px; color: var(--text-muted); }
-.ma-add-card span { font-size: 0.82rem; color: var(--text-muted); font-weight: 600; }
-.ma-add-card:hover { border-color: var(--accent); background: var(--bg-hover); }
-.ma-add-card:hover svg { color: var(--accent); }
-.ma-add-card:hover span { color: var(--accent); }
-
-/* Bottom Grid */
-.ma-bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.ma-available, .ma-recent { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; }
-.ma-btn-add { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; padding: 5px 14px; font-family: 'Inter',sans-serif; font-size: 0.75rem; font-weight: 600; color: var(--accent); cursor: pointer; transition: all 0.2s; }
-.ma-btn-add:hover { background: var(--accent); color: #fff; }
-
-/* Available List */
-.ma-avail-list { display: flex; flex-direction: column; gap: 8px; }
-.ma-avail-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; transition: background 0.2s; }
-.ma-avail-item:hover { background: var(--bg-hover); }
-.mai-icon { width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--mc), transparent 88%); color: var(--mc); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.mai-icon svg { width: 17px; height: 17px; }
-.mai-name { flex: 1; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
-.mai-add-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
-.mai-add-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-/* Activity */
-.ma-activity-list { display: flex; flex-direction: column; gap: 0; }
-.ma-act-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-light); }
-.ma-act-item:last-child { border-bottom: none; }
-.mai-timeline-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
-.mai-act-content { display: flex; flex-direction: column; gap: 2px; }
-.mai-act-module { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
-.mai-act-text { font-size: 0.82rem; color: var(--text-primary); font-weight: 500; }
-.mai-act-time { font-size: 0.72rem; color: var(--text-muted); }
+/* Empty State */
+.ma-empty-state {
+  background: var(--bg-surface);
+  border: 2px dashed var(--border-color);
+  border-radius: 20px;
+  padding: 60px 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.mes-icon { font-size: 3rem; margin-bottom: 8px; }
+.ma-empty-state h3 { font-size: 1.2rem; font-weight: 800; color: var(--text-primary); margin: 0; }
+.ma-empty-state p { font-size: 0.9rem; color: var(--text-muted); max-width: 400px; margin: 0 0 12px; }
+.ma-btn-primary {
+  background: var(--accent); color: #fff; border: none; padding: 12px 32px;
+  border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+}
+.ma-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(30,60,114,0.3); }
 
 /* Responsive */
 @media (max-width: 1200px) { .ma-active-grid { grid-template-columns: repeat(2, 1fr); } .ma-stats { grid-template-columns: repeat(2, 1fr); } }

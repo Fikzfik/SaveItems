@@ -11,11 +11,16 @@ const isMobileSidebarOpen = ref(false)
 const isDarkMode = ref(false)
 
 // Main menu (no module context)
-const mainMenu = [
-  { icon: 'dashboard', label: 'My Apps', path: '/dashboard', badge: null },
-  { icon: 'modules', label: 'Modul', path: '/dashboard/modules', badge: null },
-  { icon: 'settings', label: 'Pengaturan', path: '/dashboard/settings', badge: null },
-]
+const mainMenu = computed(() => {
+  const menu = [
+    { icon: 'dashboard', label: 'My Apps', path: '/dashboard', badge: null },
+    { icon: 'settings', label: 'Pengaturan', path: '/dashboard/settings', badge: null },
+  ]
+  if (authStore.isSubscribed) {
+    menu.splice(1, 0, { icon: 'modules', label: 'Modul', path: '/dashboard/modules', badge: null })
+  }
+  return menu
+})
 
 // Module-specific menus
 const moduleMenus = {
@@ -43,7 +48,7 @@ const currentModuleKey = computed(() => {
 })
 
 const currentModule = computed(() => currentModuleKey.value ? moduleMenus[currentModuleKey.value] : null)
-const menuItems = computed(() => currentModule.value ? currentModule.value.items : mainMenu)
+const menuItems = computed(() => currentModule.value ? currentModule.value.items : mainMenu.value)
 const isInModuleContext = computed(() => !!currentModule.value)
 
 const isActive = (path) => {
@@ -247,12 +252,12 @@ const handleLogout = () => {
             <span class="notif-dot"></span>
           </button>
           <div class="user-profile">
-            <div class="user-avatar">
-              <span>A</span>
+            <div class="user-avatar" :title="authStore.user?.name">
+              <span>{{ authStore.user?.name?.charAt(0) || 'A' }}</span>
             </div>
             <div class="user-info">
-              <span class="user-name">Admin</span>
-              <span class="user-role">Administrator</span>
+              <span class="user-name">{{ authStore.user?.name || 'Admin' }}</span>
+              <span class="user-role">{{ authStore.isSuperAdmin ? 'Super Admin' : 'Administrator' }}</span>
             </div>
           </div>
         </div>

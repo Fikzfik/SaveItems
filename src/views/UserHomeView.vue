@@ -11,6 +11,32 @@ const showModal = ref(false)
 const openDetail = (app) => { selectedApp.value = app; showModal.value = true }
 const closeModal = () => { showModal.value = false }
 
+const isActivating = ref(false)
+const activateTrial = async () => {
+  if (isActivating.value) return
+  isActivating.value = true
+  try {
+    const res = await fetch('http://localhost:3000/api/companies/activate-trial', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.message || 'Gagal mengaktifkan trial')
+    
+    // Update store with new company/plan info
+    authStore.updateCompanyData(data.data)
+    alert('Trial 7 hari berhasil diaktifkan!')
+    router.push('/dashboard')
+  } catch (err) {
+    alert(err.message)
+  } finally {
+    isActivating.value = false
+  }
+}
+const goDashboard = () => router.push('/dashboard')
+
 const apps = [
   { id: 1, name: 'Inventory', desc: 'Kelola stok, gudang, dan aset perusahaan secara real-time.', icon: 'inventory', color: '#1e3c72',
     detail: 'Sistem manajemen inventori lengkap dengan barcode scanner, notifikasi stok minimum, dan laporan pergerakan barang otomatis.',
@@ -73,9 +99,9 @@ const handleLogout = () => {
           <span class="uh-logo-text">Fisy</span>
         </div>
         <div class="uh-nav-right">
-          <button class="uh-btn-subscribe" @click="goSubscribe">🚀 Langganan Sekarang</button>
+          <button class="uh-btn-dashboard" @click="goDashboard">📊 Dashboard</button>
           <div class="uh-user-menu">
-            <div class="uh-avatar">U</div>
+            <div class="uh-avatar">{{ authStore.user?.name?.charAt(0) || 'U' }}</div>
             <button class="uh-logout" @click="handleLogout">Keluar</button>
           </div>
         </div>
@@ -89,7 +115,13 @@ const handleLogout = () => {
         <h1>Pilih paket dan mulai <span class="uh-highlight">transformasi</span> bisnis Anda.</h1>
         <p class="uh-hero-sub">Jelajahi modul yang tersedia, pilih paket yang cocok, dan aktifkan aplikasi sesuai kebutuhan bisnis Anda.</p>
         <div class="uh-hero-btns">
-          <button class="uh-btn-primary" @click="goSubscribe">Pilih Paket & Mulai</button>
+          <button v-if="authStore.isSubscribed" class="uh-btn-primary" @click="goDashboard">Buka Dashboard Saya</button>
+          <template v-else>
+            <button class="uh-btn-primary" @click="goSubscribe">Pilih Paket & Mulai</button>
+            <button class="uh-btn-outline" @click="activateTrial" :disabled="isActivating">
+              {{ isActivating ? 'Mengaktifkan...' : 'Mulai Trial 7 Hari' }}
+            </button>
+          </template>
         </div>
       </div>
     </section>
@@ -170,7 +202,7 @@ const handleLogout = () => {
       <div class="uh-bottom-cta-inner">
         <div class="uh-cta-box">
           <h2>Siap memilih paket Anda?</h2>
-          <p>Mulai gratis 14 hari — akses semua modul tanpa batasan.</p>
+          <p>Mulai gratis 7 hari — akses semua modul tanpa batasan.</p>
           <button class="uh-btn-cta" @click="goSubscribe">Pilih Paket Sekarang</button>
         </div>
       </div>
@@ -215,7 +247,13 @@ const handleLogout = () => {
   font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
   box-shadow: 0 4px 15px rgba(30,60,114,0.25);
 }
-.uh-btn-subscribe:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(30,60,114,0.35); }
+.uh-btn-dashboard {
+  padding: 8px 20px; border-radius: 10px; border: none; font-family: 'Inter',sans-serif;
+  background: #10b981; color: #fff;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(16,185,129,0.25);
+}
+.uh-btn-subscribe:hover, .uh-btn-dashboard:hover { transform: translateY(-1px); }
 .uh-user-menu { display: flex; align-items: center; gap: 10px; }
 .uh-avatar { width: 34px; height: 34px; border-radius: 10px; background: #eef2ff; color: #1e3c72; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.82rem; }
 .uh-logout { background: none; border: none; color: #8b8fa3; font-family: 'Inter',sans-serif; font-size: 0.78rem; cursor: pointer; }
@@ -236,6 +274,14 @@ const handleLogout = () => {
   cursor: pointer; transition: all 0.25s; box-shadow: 0 6px 25px rgba(30,60,114,0.35);
 }
 .uh-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 35px rgba(30,60,114,0.45); }
+.uh-btn-outline {
+  padding: 14px 36px; border-radius: 14px; border: 2px solid #1e3c72;
+  background: transparent; color: #1e3c72;
+  font-family: 'Inter',sans-serif; font-size: 0.95rem; font-weight: 700;
+  cursor: pointer; transition: all 0.25s;
+}
+.uh-btn-outline:hover:not(:disabled) { background: rgba(30,60,114,0.05); transform: translateY(-2px); }
+.uh-btn-outline:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* Stats */
 .uh-stats { background: #f8f9fc; padding: 0 32px; }
