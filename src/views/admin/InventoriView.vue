@@ -1,37 +1,116 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '../../stores/auth'
+
+const authStore = useAuthStore()
+const baseURL = 'http://127.0.0.1:3000/api'
 
 const searchQuery = ref('')
-const selectedCategory = ref('Semua')
+const selectedCategory = ref(0) // 0 means 'Semua'
 const showModal = ref(false)
+const showCategoryModal = ref(false)
 
-const categories = ['Semua', 'Elektronik', 'Furniture', 'ATK', 'Jaringan', 'Lainnya']
+const categories = ref([])
+const newCategoryName = ref('')
+const items = ref([])
+const isLoading = ref(false)
 
-const items = ref([
-  { id: 'INV-001', nama: 'Laptop Dell Latitude 5540', kategori: 'Elektronik', stok: 45, tersedia: 38, lokasi: 'Gudang A', kondisi: 'Baik', harga: 15000000 },
-  { id: 'INV-002', nama: 'Monitor LG 24" IPS', kategori: 'Elektronik', stok: 30, tersedia: 25, lokasi: 'Gudang A', kondisi: 'Baik', harga: 3200000 },
-  { id: 'INV-003', nama: 'Keyboard Mechanical Logitech', kategori: 'Elektronik', stok: 80, tersedia: 72, lokasi: 'Gudang B', kondisi: 'Baik', harga: 850000 },
-  { id: 'INV-004', nama: 'Mouse Wireless Logitech M331', kategori: 'Elektronik', stok: 120, tersedia: 105, lokasi: 'Gudang B', kondisi: 'Baik', harga: 250000 },
-  { id: 'INV-005', nama: 'Meja Kerja 120x60', kategori: 'Furniture', stok: 50, tersedia: 42, lokasi: 'Gudang C', kondisi: 'Baik', harga: 1800000 },
-  { id: 'INV-006', nama: 'Kursi Ergonomic', kategori: 'Furniture', stok: 40, tersedia: 35, lokasi: 'Gudang C', kondisi: 'Baik', harga: 2500000 },
-  { id: 'INV-007', nama: 'Printer HP LaserJet Pro', kategori: 'Elektronik', stok: 15, tersedia: 12, lokasi: 'Gudang A', kondisi: 'Baik', harga: 4500000 },
-  { id: 'INV-008', nama: 'Proyektor Epson EB-X51', kategori: 'Elektronik', stok: 8, tersedia: 5, lokasi: 'Gudang A', kondisi: 'Baik', harga: 7800000 },
-  { id: 'INV-009', nama: 'Kabel HDMI 2m', kategori: 'Jaringan', stok: 200, tersedia: 180, lokasi: 'Gudang B', kondisi: 'Baik', harga: 45000 },
-  { id: 'INV-010', nama: 'UPS APC 1100VA', kategori: 'Elektronik', stok: 25, tersedia: 20, lokasi: 'Gudang A', kondisi: 'Baik', harga: 1600000 },
-  { id: 'INV-011', nama: 'Kertas A4 80gsm (Rim)', kategori: 'ATK', stok: 500, tersedia: 430, lokasi: 'Gudang D', kondisi: 'Baik', harga: 55000 },
-  { id: 'INV-012', nama: 'Switch TP-Link 24 Port', kategori: 'Jaringan', stok: 10, tersedia: 7, lokasi: 'Gudang A', kondisi: 'Baik', harga: 2200000 },
-])
+const fetchCategories = async () => {
+  const companyId = authStore.user?.id_company || 0
+  try {
+    const res = await fetch(`${baseURL}/categories?company_id=${companyId}`, {
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    })
+    const data = await res.json()
+    if (res.ok && data.data) {
+      categories.value = data.data
+    }
+  } catch (error) {
+    console.error('Failed to fetch categories', error)
+  }
+}
+
+const fetchInventory = async () => {
+  const companyId = authStore.user?.id_company || 0
+  isLoading.value = true
+  try {
+    const res = await fetch(`${baseURL}/inventory?company_id=${companyId}`, {
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    })
+    const data = await res.json()
+    if (res.ok && data.data) {
+      items.value = data.data
+    }
+  } catch (error) {
+    console.error('Failed to fetch inventory', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchCategories()
+  fetchInventory()
+})
+
+const saveCategory = async () => {
+  if (!newCategoryName.value.trim()) return
+  try {
+    const res = await fetch(`${baseURL}/categories`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      },
+      body: JSON.stringify({ name: newCategoryName.value, description: '', company_id: authStore.user?.id_company })
+    })
+    if (res.ok) {
+      newCategoryName.value = ''
+      fetchCategories()
+    } else {
+      const data = await res.json()
+      alert('Gagal: ' + (data.message || res.statusText))
+    }
+  } catch (err) {
+    console.error(err)
+    alert('Terjadi kesalahan jaringan')
+  }
+}
+
+const deleteCategory = async (id) => {
+  if (confirm('Yakin ingin menghapus kategori ini? Pastikan tidak ada barang di dalamnya.')) {
+    try {
+      const res = await fetch(`${baseURL}/categories/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${authStore.token}` }
+      })
+      if (res.ok) {
+        if (selectedCategory.value === id) selectedCategory.value = 0
+        fetchCategories()
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+}
+
+const getCategoryName = (id) => {
+  if (!id) return 'Lainnya'
+  const cat = categories.value.find(c => c.id_category === id)
+  return cat ? cat.name : 'Lainnya'
+}
 
 const filteredItems = computed(() => {
   return items.value.filter(item => {
-    const matchSearch = item.nama.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                        item.id.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchCategory = selectedCategory.value === 'Semua' || item.kategori === selectedCategory.value
+    const matchSearch = item.name?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+                        item.sku?.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const matchCategory = selectedCategory.value === 0 || item.category_id === selectedCategory.value
     return matchSearch && matchCategory
   })
 })
 
 const getStokStatus = (tersedia, stok) => {
+  if (!stok) return 'stok-rendah'
   const ratio = tersedia / stok
   if (ratio > 0.7) return 'stok-aman'
   if (ratio > 0.3) return 'stok-sedang'
@@ -39,6 +118,7 @@ const getStokStatus = (tersedia, stok) => {
 }
 
 const getStokLabel = (tersedia, stok) => {
+  if (!stok) return 'Rendah'
   const ratio = tersedia / stok
   if (ratio > 0.7) return 'Aman'
   if (ratio > 0.3) return 'Sedang'
@@ -46,14 +126,14 @@ const getStokLabel = (tersedia, stok) => {
 }
 
 const formatRupiah = (value) => {
-  return 'Rp ' + value.toLocaleString('id-ID')
+  return 'Rp ' + (value || 0).toLocaleString('id-ID')
 }
 
 const totalItems = computed(() => items.value.length)
-const totalStok = computed(() => items.value.reduce((a, b) => a + b.stok, 0))
-const totalTersedia = computed(() => items.value.reduce((a, b) => a + b.tersedia, 0))
+const totalStok = computed(() => items.value.reduce((a, b) => a + (b.stock_total || 0), 0))
+const totalTersedia = computed(() => items.value.reduce((a, b) => a + (b.stock_available || 0), 0))
 const totalNilai = computed(() => {
-  const val = items.value.reduce((a, b) => a + (b.harga * b.stok), 0)
+  const val = items.value.reduce((a, b) => a + ((b.price || 0) * (b.stock_total || 0)), 0)
   return formatRupiah(val)
 })
 
@@ -61,56 +141,76 @@ const isEditing = ref(false)
 const editingId = ref(null)
 
 const currentItem = ref({
-  nama: '',
-  kategori: 'Elektronik',
-  stok: 0,
-  lokasi: '',
-  harga: 0
+  name: '',
+  sku: '',
+  category_id: null,
+  stock_total: 0,
+  stock_available: 0,
+  price: 0,
+  unit: 'Pcs'
 })
 
 const openAddModal = () => {
   isEditing.value = false
   editingId.value = null
-  currentItem.value = { nama: '', kategori: 'Elektronik', stok: 0, lokasi: '', harga: 0 }
+  currentItem.value = { name: '', sku: `INV-${Date.now().toString().slice(-4)}`, category_id: categories.value[0]?.id_category || null, stock_total: 0, stock_available: 0, price: 0, unit: 'Pcs' }
   showModal.value = true
 }
 
 const editItem = (item) => {
   isEditing.value = true
-  editingId.value = item.id
+  editingId.value = item.id_inventory
   currentItem.value = { ...item }
   showModal.value = true
 }
 
-const deleteItem = (id) => {
+const deleteItem = async (id) => {
   if (confirm('Apakah Anda yakin ingin menghapus barang ini?')) {
-    items.value = items.value.filter(i => i.id !== id)
+    try {
+      await fetch(`${baseURL}/inventory/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${authStore.token}` }
+      })
+      fetchInventory()
+    } catch (err) {
+      console.error(err)
+    }
   }
 }
 
-const saveItem = () => {
-  if (!currentItem.value.nama || !currentItem.value.stok) return
+const saveItem = async () => {
+  if (!currentItem.value.name) return
   
-  if (isEditing.value) {
-    const index = items.value.findIndex(i => i.id === editingId.value)
-    if (index !== -1) {
-      items.value[index] = { ...items.value[index], ...currentItem.value }
-    }
-  } else {
-    const idStr = (items.value.length + 1).toString().padStart(3, '0')
-    items.value.unshift({
-      id: `INV-${idStr}`,
-      nama: currentItem.value.nama,
-      kategori: currentItem.value.kategori,
-      stok: currentItem.value.stok,
-      tersedia: currentItem.value.stok,
-      lokasi: currentItem.value.lokasi || 'Gudang A',
-      kondisi: 'Baik',
-      harga: currentItem.value.harga
-    })
+  // Set available equal to total when creating new
+  if (!isEditing.value) {
+    currentItem.value.stock_available = currentItem.value.stock_total
+    currentItem.value.company_id = authStore.user?.id_company
   }
-  
-  showModal.value = false
+
+  const method = isEditing.value ? 'PUT' : 'POST'
+  const url = isEditing.value ? `${baseURL}/inventory/${editingId.value}` : `${baseURL}/inventory`
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}` 
+      },
+      body: JSON.stringify(currentItem.value)
+    })
+    
+    if (res.ok) {
+      showModal.value = false
+      fetchInventory()
+    } else {
+      const data = await res.json()
+      alert('Gagal menyimpan barang: ' + (data.message || res.statusText))
+    }
+  } catch (err) {
+    console.error(err)
+    alert('Terjadi kesalahan jaringan')
+  }
 }
 </script>
 
@@ -123,6 +223,10 @@ const saveItem = () => {
         <p class="page-subtitle">Kelola semua barang inventori perusahaan</p>
       </div>
       <div class="header-actions">
+        <button class="btn-outline" @click="showCategoryModal = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Kelola Kategori
+        </button>
         <button class="btn-outline">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export
@@ -162,13 +266,18 @@ const saveItem = () => {
       </div>
       <div class="category-tabs">
         <button
-          v-for="cat in categories"
-          :key="cat"
           class="tab-btn"
-          :class="{ active: selectedCategory === cat }"
-          @click="selectedCategory = cat"
+          :class="{ active: selectedCategory === 0 }"
+          @click="selectedCategory = 0"
+        >Semua</button>
+        <button
+          v-for="cat in categories"
+          :key="cat.id_category"
+          class="tab-btn"
+          :class="{ active: selectedCategory === cat.id_category }"
+          @click="selectedCategory = cat.id_category"
         >
-          {{ cat }}
+          {{ cat.name }}
         </button>
       </div>
     </div>
@@ -188,14 +297,14 @@ const saveItem = () => {
               <th>Stok</th>
               <th>Tersedia</th>
               <th>Status</th>
-              <th>Lokasi</th>
+              <th>Lokasi/Satuan</th>
               <th>Harga Satuan</th>
               <th>Aksi</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in filteredItems" :key="item.id">
-              <td class="td-id">{{ item.id }}</td>
+            <tr v-for="item in filteredItems" :key="item.id_inventory">
+              <td class="td-id">{{ item.sku }}</td>
               <td class="td-nama">
                 <div class="item-name">
                   <div class="item-icon">
@@ -205,25 +314,25 @@ const saveItem = () => {
                       <line x1="12" y1="22.08" x2="12" y2="12"/>
                     </svg>
                   </div>
-                  <span>{{ item.nama }}</span>
+                  <span>{{ item.name }}</span>
                 </div>
               </td>
-              <td><span class="category-tag">{{ item.kategori }}</span></td>
-              <td class="td-number">{{ item.stok }}</td>
-              <td class="td-number">{{ item.tersedia }}</td>
+              <td><span class="category-tag">{{ getCategoryName(item.category_id) }}</span></td>
+              <td class="td-number">{{ item.stock_total }}</td>
+              <td class="td-number">{{ item.stock_available }}</td>
               <td>
-                <span class="status-pill" :class="getStokStatus(item.tersedia, item.stok)">
-                  {{ getStokLabel(item.tersedia, item.stok) }}
+                <span class="status-pill" :class="getStokStatus(item.stock_available, item.stock_total)">
+                  {{ getStokLabel(item.stock_available, item.stock_total) }}
                 </span>
               </td>
-              <td class="td-lokasi">{{ item.lokasi }}</td>
-              <td class="td-harga">{{ formatRupiah(item.harga) }}</td>
+              <td class="td-lokasi">{{ item.unit || '-' }}</td>
+              <td class="td-harga">{{ formatRupiah(item.price) }}</td>
               <td>
                 <div class="action-btns">
                   <button class="act-btn act-edit" title="Edit" @click="editItem(item)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
-                  <button class="act-btn act-delete" title="Hapus" @click="deleteItem(item.id)">
+                  <button class="act-btn act-delete" title="Hapus" @click="deleteItem(item.id_inventory)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
                 </div>
@@ -253,34 +362,65 @@ const saveItem = () => {
       <div class="modal-body">
         <div class="form-group">
           <label>Nama Barang</label>
-          <input v-model="currentItem.nama" type="text" placeholder="Contoh: Laptop Dell Latitude" />
+          <input v-model="currentItem.name" type="text" placeholder="Contoh: Laptop Dell Latitude" />
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>Kategori</label>
-            <select v-model="currentItem.kategori">
-              <option v-for="cat in categories.filter(c => c !== 'Semua')" :key="cat" :value="cat">{{ cat }}</option>
+            <select v-model="currentItem.category_id">
+              <option v-for="cat in categories" :key="cat.id_category" :value="cat.id_category">{{ cat.name }}</option>
             </select>
           </div>
           <div class="form-group">
             <label>Stok Awal</label>
-            <input v-model.number="currentItem.stok" type="number" min="0" />
+            <input v-model.number="currentItem.stock_total" type="number" min="0" />
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Lokasi</label>
-            <input v-model="currentItem.lokasi" type="text" placeholder="Contoh: Gudang A" />
+            <label>Unit (Satuan)</label>
+            <input v-model="currentItem.unit" type="text" placeholder="Contoh: Pcs, Unit" />
           </div>
           <div class="form-group">
             <label>Harga Satuan</label>
-            <input v-model.number="currentItem.harga" type="number" min="0" />
+            <input v-model.number="currentItem.price" type="number" min="0" />
           </div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn-outline" @click="showModal = false">Batal</button>
         <button class="btn-primary" @click="saveItem">{{ isEditing ? 'Simpan Perubahan' : 'Simpan Barang' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Kelola Kategori -->
+  <div class="modal-overlay" v-if="showCategoryModal" @click.self="showCategoryModal = false">
+    <div class="modal-content category-modal">
+      <div class="modal-header">
+        <h2>Kelola Kategori</h2>
+        <button class="close-btn" @click="showCategoryModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="add-category-form">
+          <input v-model="newCategoryName" type="text" placeholder="Nama kategori baru..." @keyup.enter="saveCategory" />
+          <button class="btn-primary" @click="saveCategory">Tambah</button>
+        </div>
+        
+        <div class="category-list">
+          <div v-for="cat in categories" :key="cat.id_category" class="category-item">
+            <div class="category-info" @click="selectedCategory = cat.id_category; showCategoryModal = false" style="cursor: pointer; flex: 1;">
+              <span>{{ cat.name }}</span>
+              <small style="display: block; color: var(--text-muted); font-size: 0.75rem;">
+                {{ items.filter(i => i.category_id === cat.id_category).length }} barang
+              </small>
+            </div>
+            <button class="act-btn act-delete" title="Hapus Kategori" @click="deleteCategory(cat.id_category)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+          <div v-if="categories.length === 0" class="empty-state-small">Belum ada kategori</div>
+        </div>
       </div>
     </div>
   </div>
@@ -803,6 +943,61 @@ tbody tr:last-child td {
   line-height: 1;
   transition: color 0.2s;
 }
+
+/* Category Modal Styles */
+.category-modal {
+  max-width: 450px;
+}
+
+.add-category-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.add-category-form input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  outline: none;
+}
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-input);
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+}
+
+.category-item span {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-state-small {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 
 .close-btn:hover { color: var(--danger); }
 

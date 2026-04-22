@@ -1,23 +1,38 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const searchQuery = ref('')
 const viewMode = ref('grid')
 
-const users = ref([
-  { id: 1, nama: 'Budi Santoso', role: 'IT Manager', departemen: 'IT', phone: '+62 812-3456-7890', email: 'budi.santoso@company.com', status: 'active', color: '#1e3c72' },
-  { id: 2, nama: 'Siti Rahayu', role: 'Marketing Lead', departemen: 'Marketing', phone: '+62 813-2345-6789', email: 'siti.rahayu@company.com', status: 'active', color: '#7c3aed' },
-  { id: 3, nama: 'Ahmad Fauzi', role: 'Software Engineer', departemen: 'Engineering', phone: '+62 857-1234-5678', email: 'ahmad.fauzi@company.com', status: 'active', color: '#059669' },
-  { id: 4, nama: 'Dewi Lestari', role: 'Procurement Officer', departemen: 'Procurement', phone: '+62 821-9876-5432', email: 'dewi.lestari@company.com', status: 'inactive', color: '#ea580c' },
-  { id: 5, nama: 'Riko Pratama', role: 'Finance Analyst', departemen: 'Finance', phone: '+62 838-7654-3210', email: 'riko.pratama@company.com', status: 'active', color: '#dc2626' },
-  { id: 6, nama: 'Rina Wati', role: 'HR Specialist', departemen: 'HR', phone: '+62 852-4567-8901', email: 'rina.wati@company.com', status: 'active', color: '#0891b2' },
-  { id: 7, nama: 'Joko Widodo', role: 'System Admin', departemen: 'IT', phone: '+62 819-8765-4321', email: 'joko.widodo@company.com', status: 'active', color: '#4f46e5' },
-  { id: 8, nama: 'Maya Sari', role: 'Operations Manager', departemen: 'Operations', phone: '+62 878-5432-1098', email: 'maya.sari@company.com', status: 'active', color: '#be185d' },
-  { id: 9, nama: 'Andi Wijaya', role: 'Procurement Staff', departemen: 'Procurement', phone: '+62 856-3210-9876', email: 'andi.wijaya@company.com', status: 'inactive', color: '#b45309' },
-  { id: 10, nama: 'Fajar Rahman', role: 'Network Engineer', departemen: 'IT', phone: '+62 881-2109-8765', email: 'fajar.rahman@company.com', status: 'active', color: '#059669' },
-  { id: 11, nama: 'Lisa Permata', role: 'Accounting Staff', departemen: 'Finance', phone: '+62 895-1098-7654', email: 'lisa.permata@company.com', status: 'active', color: '#7c3aed' },
-  { id: 12, nama: 'Dimas Prasetyo', role: 'Warehouse Staff', departemen: 'Operations', phone: '+62 812-0987-6543', email: 'dimas.prasetyo@company.com', status: 'active', color: '#1e3c72' },
-])
+const users = ref([])
+
+const fetchUsers = async () => {
+  try {
+    const token = localStorage.getItem('token')
+    const response = await fetch('http://localhost:3000/api/users', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const resData = await response.json()
+    
+    // Map backend model to frontend structure
+    users.value = (resData.data || []).map(u => ({
+      id: u.id_user,
+      nama: u.name,
+      email: u.email,
+      phone: u.phone,
+      role: u.id_role === 1 ? 'Super Admin' : (u.id_role === 2 ? 'Admin' : 'User'),
+      departemen: 'General', // Backend doesn't have department yet, use default
+      status: u.status,
+      color: ['#1e3c72', '#7c3aed', '#059669', '#ea580c', '#dc2626', '#0891b2', '#be185d'][Math.floor(Math.random() * 7)]
+    }))
+  } catch (error) {
+    console.error('Failed to fetch users:', error)
+  }
+}
+
+onMounted(() => {
+  fetchUsers()
+})
 
 const filteredUsers = computed(() => {
   if (!searchQuery.value) return users.value
@@ -31,6 +46,7 @@ const filteredUsers = computed(() => {
 })
 
 const getInitials = (name) => {
+  if (!name) return '??'
   return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
 }
 
@@ -60,38 +76,72 @@ const editUser = (user) => {
   showModal.value = true
 }
 
-const deleteUser = (id) => {
+const deleteUser = async (id) => {
   if (confirm('Apakah Anda yakin ingin menghapus user ini?')) {
-    users.value = users.value.filter(u => u.id !== id)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`http://localhost:3000/api/users/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (response.ok) {
+        users.value = users.value.filter(u => u.id !== id)
+      } else {
+        alert('Gagal menghapus user')
+      }
+    } catch (error) {
+      console.error('Failed to delete user:', error)
+      alert('Gagal menghapus user')
+    }
   }
 }
 
-const saveUser = () => {
+const saveUser = async () => {
   if (!newUser.value.nama || !newUser.value.email) return
 
-  if (isEditing.value) {
-    const index = users.value.findIndex(u => u.id === editingId.value)
-    if (index !== -1) {
-      users.value[index] = { ...users.value[index], ...newUser.value }
-    }
-  } else {
-    const colors = ['#1e3c72', '#7c3aed', '#059669', '#ea580c', '#dc2626', '#0891b2', '#be185d']
-    const randomColor = colors[Math.floor(Math.random() * colors.length)]
-
-    users.value.unshift({
-      id: Date.now(),
-      nama: newUser.value.nama,
-      role: newUser.value.role,
-      departemen: newUser.value.departemen,
-      phone: newUser.value.phone || '-',
+  try {
+    const token = localStorage.getItem('token')
+    const payload = {
+      name: newUser.value.nama,
       email: newUser.value.email,
-      status: 'active',
-      color: randomColor
-    })
-  }
+      phone: newUser.value.phone || '-',
+      password: 'password123' // Default password for new users
+    }
 
-  showModal.value = false
+    let response
+    if (isEditing.value) {
+      response = await fetch(`http://localhost:3000/api/users/${editingId.value}`, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+    } else {
+      response = await fetch('http://localhost:3000/api/users', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+    }
+    
+    if (response.ok) {
+        // Refresh list after saving
+        await fetchUsers()
+        showModal.value = false
+    } else {
+        alert('Gagal menyimpan user')
+    }
+  } catch (error) {
+    console.error('Failed to save user:', error)
+    alert('Gagal menyimpan user')
+  }
 }
+
 </script>
 
 <template>
