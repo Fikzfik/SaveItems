@@ -5,8 +5,11 @@ const searchQuery = ref('')
 const viewMode = ref('grid')
 
 const users = ref([])
+const isLoading = ref(false)
+const successMsg = ref('')
 
 const fetchUsers = async () => {
+  isLoading.value = true
   try {
     const token = localStorage.getItem('token')
     const response = await fetch('http://localhost:3000/api/users', {
@@ -14,19 +17,25 @@ const fetchUsers = async () => {
     })
     const resData = await response.json()
     
-    // Map backend model to frontend structure
-    users.value = (resData.data || []).map(u => ({
-      id: u.id_user,
-      nama: u.name,
-      email: u.email,
-      phone: u.phone,
-      role: u.id_role === 1 ? 'Super Admin' : (u.id_role === 2 ? 'Admin' : 'User'),
-      departemen: 'General', // Backend doesn't have department yet, use default
-      status: u.status,
-      color: ['#1e3c72', '#7c3aed', '#059669', '#ea580c', '#dc2626', '#0891b2', '#be185d'][Math.floor(Math.random() * 7)]
-    }))
+    if (response.ok) {
+        // Map backend model to frontend structure
+        users.value = (resData.data || []).map(u => ({
+          id: u.id_user,
+          nama: u.name,
+          email: u.email,
+          phone: u.phone,
+          role: u.id_role === 1 ? 'Super Admin' : (u.id_role === 2 ? 'Admin' : 'User'),
+          departemen: 'General', 
+          status: u.status || 'active',
+          color: ['#1e3c72', '#7c3aed', '#059669', '#ea580c', '#dc2626', '#0891b2', '#be185d'][Math.floor(Math.random() * 7)]
+        }))
+    } else {
+        console.error('API Error:', resData.message)
+    }
   } catch (error) {
     console.error('Failed to fetch users:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -130,11 +139,13 @@ const saveUser = async () => {
     }
     
     if (response.ok) {
-        // Refresh list after saving
+        successMsg.value = isEditing.value ? 'User berhasil diperbarui!' : 'User berhasil ditambahkan!'
         await fetchUsers()
         showModal.value = false
+        setTimeout(() => { successMsg.value = '' }, 3000)
     } else {
-        alert('Gagal menyimpan user')
+        const errData = await response.json()
+        alert('Gagal menyimpan user: ' + (errData.message || 'Error unknown'))
     }
   } catch (error) {
     console.error('Failed to save user:', error)
@@ -152,6 +163,14 @@ const saveUser = async () => {
         <h1>Users</h1>
         <p class="page-subtitle">{{ filteredUsers.length }} anggota tim terdaftar</p>
       </div>
+
+      <!-- Success Toast -->
+      <Transition name="fade">
+        <div v-if="successMsg" class="success-toast">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          {{ successMsg }}
+        </div>
+      </Transition>
       <div class="header-actions">
         <div class="view-toggle">
           <button
@@ -264,10 +283,15 @@ const saveUser = async () => {
       </div>
     </div>
 
-    <!-- Empty -->
-    <div class="empty-state" v-if="filteredUsers.length === 0">
+    <!-- Empty / Loading -->
+    <div class="empty-state" v-if="filteredUsers.length === 0 && !isLoading">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
       <p>Tidak ada user ditemukan</p>
+    </div>
+
+    <div class="empty-state" v-if="isLoading">
+      <div class="spinner"></div>
+      <p>Memuat data user...</p>
     </div>
   </div>
 
@@ -739,6 +763,53 @@ tbody tr:last-child td { border-bottom: none; }
 
 @media (max-width: 480px) {
   .user-grid { grid-template-columns: 1fr; }
+}
+
+/* Success Toast */
+.success-toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #059669;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px rgba(5, 150, 105, 0.3);
+  z-index: 2000;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.success-toast svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -20px);
+}
+
+/* Spinner */
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(30, 60, 114, 0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Modal Styles */
