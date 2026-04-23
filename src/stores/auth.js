@@ -7,6 +7,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!token.value)
   const isSuperAdmin = computed(() => user.value?.id_role === 1)
+  const isAdmin = computed(() => user.value?.id_role === 1 || user.value?.id_role === 2)
 
   const isSubscribed = computed(() => {
     if (isSuperAdmin.value) return true
@@ -60,6 +61,7 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     isAuthenticated,
     isSuperAdmin,
+    isAdmin,
     isSubscribed,
     hasModule,
     setAuth,
