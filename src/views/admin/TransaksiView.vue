@@ -91,12 +91,12 @@ const fetchTransactions = async () => {
     transactions.value = (result.data || []).map(b => {
       const dueDate = (b.due_date && typeof b.due_date === 'string' && !b.due_date.startsWith('0001')) ? new Date(b.due_date) : null
       const requestDate = (b.request_date && typeof b.request_date === 'string' && !b.request_date.startsWith('0001')) ? new Date(b.request_date) : new Date(b.created_at)
-      const isOverdue = dueDate && dueDate < now && b.status === 'approved'
+      const d1 = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const d2 = dueDate ? new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()) : null
+      const isOverdue = d2 && d1 > d2 && b.status === 'approved'
       
       let daysRemaining = null
-      if (dueDate) {
-        const d1 = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        const d2 = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate())
+      if (d2) {
         daysRemaining = Math.round((d2 - d1) / (1000 * 60 * 60 * 24))
       }
       
@@ -150,17 +150,19 @@ const filteredTransactions = computed(() => {
   })
 })
 
-const getStatusBadgeClass = (status, isOverdue) => {
+const getStatusBadgeClass = (status, isOverdue, daysRemaining) => {
   if (status === 'returned') return 'status-selesai'
   if (isOverdue) return 'status-terlambat'
+  if (status === 'approved' && daysRemaining === 0) return 'status-deadline'
   if (status === 'approved') return 'status-ongoing'
   if (status === 'pending') return 'status-pending'
   return 'status-rejected'
 }
 
-const getStatusLabel = (status, isOverdue) => {
+const getStatusLabel = (status, isOverdue, daysRemaining) => {
   if (status === 'returned') return 'Selesai'
   if (isOverdue) return 'Terlambat'
+  if (status === 'approved' && daysRemaining === 0) return 'Hari Terakhir'
   if (status === 'approved') return 'Ongoing'
   if (status === 'pending') return 'Pending'
   if (status === 'rejected') return 'Ditolak'
@@ -173,10 +175,41 @@ const selectedTrx = ref(null)
 const isSaving = ref(false)
 const formError = ref('')
 
+const showConfirmModal = ref(false)
+const confirmTitle = ref('')
+const confirmMessage = ref('')
+const confirmType = ref('success')
+const confirmAction = ref(null)
+
+const triggerConfirm = (title, message, type, action) => {
+  confirmTitle.value = title
+  confirmMessage.value = message
+  confirmType.value = type
+  confirmAction.value = action
+  showConfirmModal.value = true
+}
+
+const executeConfirm = async () => {
+  if (confirmAction.value) {
+    await confirmAction.value()
+  }
+  showConfirmModal.value = false
+}
+
 const selectedItemStock = computed(() => {
-  if (!newTrx.value.inventory_id) return null
+  if (!newTrx.value.inventory_id) return 0
   const item = inventoryItems.value.find(i => i.id_inventory === newTrx.value.inventory_id)
-  return item ? item.stock_available : null
+  
+  // Jika sedang edit, tambahkan jumlah yang sedang dipinjam kembali ke stok tersedia untuk validasi
+  if (isEditMode.value && selectedTrx.value && selectedTrx.value.inventory_id === newTrx.value.inventory_id) {
+    return (item?.stock_available || 0) + (selectedTrx.value.jumlah || 0)
+  }
+  
+  return item?.stock_available || 0
+})
+
+const insufficientStock = computed(() => {
+  return newTrx.value.quantity > selectedItemStock.value
 })
 
 const getTodayString = () => {
@@ -302,25 +335,36 @@ const saveTransaction = async () => {
 }
 
 const updateBorrowStatus = async (id, status) => {
-  const confirmMsg = status === 'returned' ? 'Selesaikan peminjaman ini dan kembalikan stok?' : `Ubah status menjadi ${status}?`
-  if (!confirm(confirmMsg)) return
-  try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`${baseURL}/borrow/${id}/status`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
-    })
-    if (response.ok) {
-      await Promise.all([fetchTransactions(), fetchInventory()])
-      if (showViewModal.value) showViewModal.value = false
-    } else {
-      const err = await response.json()
-      alert('Gagal: ' + (err.message || 'Error'))
-    }
-  } catch (error) {
-    console.error('Update status error:', error)
+  let title = 'Ubah Status?'
+  let msg = `Apakah Anda yakin ingin mengubah status menjadi ${status}?`
+  let type = 'warning'
+
+  if (status === 'returned') {
+    title = 'Selesaikan Peminjaman?'
+    msg = 'Tandai transaksi ini sebagai selesai dan kembalikan stok barang ke inventori?'
+    type = 'success'
+  } else if (status === 'rejected') {
+    title = 'Tolak Peminjaman?'
+    msg = 'Apakah Anda yakin ingin menolak atau membatalkan peminjaman ini? Stok akan dikembalikan jika sebelumnya sudah disetujui.'
+    type = 'warning'
   }
+  
+  triggerConfirm(title, msg, type, async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${baseURL}/borrow/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+      if (response.ok) {
+        await Promise.all([fetchTransactions(), fetchInventory()])
+        showViewModal.value = false
+      }
+    } catch (error) {
+      console.error('Update status error:', error)
+    }
+  })
 }
 
 const viewTransaction = (trx) => {
@@ -410,9 +454,9 @@ onMounted(() => {
                   </div>
                 </td>
                 <td>
-                  <span class="status-badge" :class="getStatusBadgeClass(t.status, t.isOverdue)">
+                  <span class="status-badge" :class="getStatusBadgeClass(t.status, t.isOverdue, t.daysRemaining)">
                     <span class="badge-dot"></span>
-                    {{ getStatusLabel(t.status, t.isOverdue) }}
+                    {{ getStatusLabel(t.status, t.isOverdue, t.daysRemaining) }}
                   </span>
                 </td>
                 <td>
@@ -473,7 +517,7 @@ onMounted(() => {
             <h2>{{ selectedTrx.id }}</h2>
           </div>
           <div class="modal-header-btns">
-            <button v-if="authStore.isAdmin" class="btn-icon-head" @click="handleEditClick(selectedTrx)" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"/></svg></button>
+            <button v-if="authStore.isAdmin && (selectedTrx.status === 'pending' || selectedTrx.status === 'approved')" class="btn-icon-head" @click="handleEditClick(selectedTrx)" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4L18.5 2.5z"/></svg></button>
             <button v-if="authStore.isAdmin" class="btn-icon-head delete" @click="deleteTransaction(selectedTrx.realId)" title="Hapus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
             <button class="close-modal" @click="showViewModal = false">&times;</button>
           </div>
@@ -519,6 +563,7 @@ onMounted(() => {
         <div class="modal-footer" v-if="authStore.isAdmin">
           <button v-if="selectedTrx.status === 'pending'" class="btn-approve-big" @click="updateBorrowStatus(selectedTrx.realId, 'approved')">Setujui Peminjaman</button>
           <button v-if="selectedTrx.status === 'approved'" class="btn-return-big" @click="updateBorrowStatus(selectedTrx.realId, 'returned')">Barang Sudah Dikembalikan</button>
+          <button v-if="selectedTrx.status === 'pending' || selectedTrx.status === 'approved'" class="btn-reject-big" @click="updateBorrowStatus(selectedTrx.realId, 'rejected')">Tolak / Batalkan</button>
           <button class="btn-secondary" @click="showViewModal = false">Tutup</button>
         </div>
       </div>
@@ -588,7 +633,13 @@ onMounted(() => {
 
           <div class="form-group">
             <label>Jumlah Unit</label>
-            <input type="number" v-model.number="newTrx.quantity" min="1" class="styled-input" />
+            <div class="qty-input-wrapper">
+              <input type="number" v-model.number="newTrx.quantity" min="1" class="styled-input" :class="{ 'input-error': insufficientStock }" />
+              <span v-if="newTrx.inventory_id" :class="['stock-info-tag', insufficientStock ? 'tag-error' : '']">
+                Tersedia: {{ selectedItemStock }}
+              </span>
+            </div>
+            <p v-if="insufficientStock" class="error-text-sm">Jumlah melebihi stok tersedia!</p>
           </div>
           
           <div class="form-group">
@@ -598,9 +649,29 @@ onMounted(() => {
         </div>
         <div class="modal-footer" style="justify-content: flex-end; background: #fff; border-top: 1px solid #f1f5f9;">
           <button class="btn-secondary" @click="showAddModal = false">Batal</button>
-          <button class="btn-primary" style="padding: 14px 24px;" :disabled="isSaving" @click="saveTransaction">
-            {{ isSaving ? 'Memproses...' : (isEditMode ? 'Simpan Perubahan' : 'Simpan Transaksi') }}
+          <button class="btn-primary" style="padding: 14px 24px;" :disabled="isSaving || insufficientStock" @click="saveTransaction">
+            {{ isSaving ? 'Memproses...' : (insufficientStock ? 'Stok Tidak Cukup' : (isEditMode ? 'Simpan Perubahan' : 'Simpan Transaksi')) }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div v-if="showConfirmModal" class="modal-overlay confirm-overlay">
+      <div class="confirm-modal">
+        <div class="confirm-header">
+          <div class="confirm-icon" :class="confirmType">
+            <svg v-if="confirmType === 'warning'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <h3>{{ confirmTitle }}</h3>
+        </div>
+        <div class="confirm-body">
+          <p>{{ confirmMessage }}</p>
+        </div>
+        <div class="confirm-footer">
+          <button class="btn-cancel" @click="showConfirmModal = false">Batal</button>
+          <button class="btn-confirm" :class="confirmType" @click="executeConfirm">Ya, Lanjutkan</button>
         </div>
       </div>
     </div>
@@ -655,6 +726,7 @@ tbody tr:last-child td { border-bottom: none; }
 .status-selesai { background: #dcfce7; color: #15803d; }
 .status-terlambat { background: #fee2e2; color: #b91c1c; }
 .status-ongoing { background: #dbeafe; color: #1d4ed8; }
+.status-deadline { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
 .status-pending { background: #fef3c7; color: #b45309; }
 
 .user-cell { display: flex; align-items: center; gap: 10px; }
@@ -719,9 +791,11 @@ tbody tr:last-child td { border-bottom: none; }
 .info-item.vertical { flex-direction: column; border: none; gap: 8px; }
 .info-notes { background: #f1f5f9; padding: 16px; border-radius: 14px; font-size: 0.9rem; color: #475569; line-height: 1.5; }
 
-.modal-footer { padding: 24px 32px; background: #f8fafc; display: flex; gap: 12px; }
-.btn-approve-big { flex: 1; background: #16a34a; color: #fff; border: none; padding: 14px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-.btn-return-big { flex: 1; background: #2563eb; color: #fff; border: none; padding: 14px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.modal-footer { padding: 24px 32px; background: #f8fafc; display: flex; flex-wrap: wrap; gap: 12px; }
+.btn-approve-big { flex: 1; background: #1e3c72; color: #fff; border: none; padding: 14px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; min-width: 150px; }
+.btn-return-big { flex: 1; background: #16a34a; color: #fff; border: none; padding: 14px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; min-width: 150px; }
+.btn-reject-big { flex: 1; background: #fff1f2; color: #e11d48; border: 1px solid #fda4af; padding: 14px; border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; min-width: 150px; }
+.btn-reject-big:hover { background: #ffe4e6; }
 .btn-secondary { padding: 14px 24px; border-radius: 14px; border: 1.5px solid #e2e8f0; background: #fff; font-weight: 700; cursor: pointer; color: #64748b; }
 
 /* Form Elements */
@@ -753,14 +827,32 @@ textarea.styled-input { resize: vertical; min-height: 80px; }
 .select-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; margin-top: 8px; max-height: 250px; overflow-y: auto; z-index: 110; box-shadow: 0 10px 40px rgba(0,0,0,0.12); }
 .dropdown-item { padding: 14px 18px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s; }
 .dropdown-item:hover { background: #f8fafc; }
-.dropdown-empty { padding: 20px; text-align: center; color: #94a3b8; font-style: italic; font-size: 0.85rem; }
+.dropdown-empty { padding: 12px; text-align: center; color: #94a3b8; font-size: 0.85rem; font-style: italic; }
 
-.item-info-box { display: flex; flex-direction: column; gap: 2px; }
-.item-name-sm { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
-.item-stock-sm { font-size: 0.75rem; color: #1e3c72; font-weight: 700; }
+/* Confirm Modal Styles */
+.confirm-overlay { z-index: 1000; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
+.confirm-modal { background: #fff; width: 100%; max-width: 400px; border-radius: 20px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.confirm-header { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-bottom: 12px; }
+.confirm-icon { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.confirm-icon.success { background: #f0fdf4; color: #16a34a; }
+.confirm-icon.warning { background: #fffbeb; color: #d97706; }
+.confirm-icon svg { width: 28px; height: 28px; }
+.confirm-header h3 { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 0; }
+.confirm-body { text-align: center; margin-bottom: 24px; }
+.confirm-body p { color: #64748b; line-height: 1.5; font-size: 0.95rem; margin: 0; }
+.confirm-footer { display: flex; gap: 12px; }
+.confirm-footer button { flex: 1; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
+.btn-cancel { background: #f1f5f9; color: #475569; }
+.btn-cancel:hover { background: #e2e8f0; }
+.btn-confirm.success { background: #1e3c72; color: #fff; }
+.btn-confirm.success:hover { background: #162d5a; transform: translateY(-2px); }
+.btn-confirm.warning { background: #ea580c; color: #fff; }
+.btn-confirm.warning:hover { background: #c2410c; transform: translateY(-2px); }
 
-.u-info { display: flex; flex-direction: column; gap: 2px; }
-.u-name { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
-.u-email { font-size: 0.75rem; color: #94a3b8; }
-.empty-row { padding: 40px; text-align: center; color: #999; font-style: italic; }
+.qty-input-wrapper { position: relative; display: flex; align-items: center; }
+.stock-info-tag { position: absolute; right: 12px; font-size: 0.7rem; font-weight: 700; background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; }
+.tag-error { background: #fee2e2; color: #dc2626; }
+.input-error { border-color: #ef4444 !important; }
+.error-text-sm { font-size: 0.7rem; color: #dc2626; font-weight: 600; margin-top: 4px; }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
 </style>

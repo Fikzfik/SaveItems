@@ -55,27 +55,54 @@ const topItems = ref([
 
 const getTrendIcon = (trend) => trend
 
-// Simulate reactive backend filtering
-watch([selectedPeriod, selectedCategory], () => {
-  const multiplier = selectedPeriod.value === 'minggu-ini' ? 0.3 : 
-                     selectedPeriod.value === 'hari-ini' ? 0.05 : 1;
-                     
-  const baseTtx = Math.floor((150 + Math.random() * 200) * multiplier);
-  
-  summaryStats.value = {
-    totalTransaksi: baseTtx,
-    totalBarangMasuk: Math.floor(baseTtx * 5.7),
-    totalBarangKeluar: Math.floor(baseTtx * 3.4),
-    totalNilai: `Rp ${(baseTtx * 0.01).toFixed(1)}M`,
-    perubahan: `${Math.random() > 0.3 ? '+' : '-'}${Math.floor(Math.random() * 25)}%`
+const stockTransactions = ref([])
+const isLoading = ref(false)
+const baseURL = 'http://127.0.0.1:3000/api'
+
+const fetchStockHistory = async () => {
+  isLoading.value = true
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${baseURL}/stock-transactions`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const result = await res.json()
+    stockTransactions.value = result.data || []
+    
+    // Update summary stats based on real data
+    const masuk = stockTransactions.value.filter(t => t.type === 'in').reduce((sum, t) => sum + t.quantity, 0)
+    const keluar = stockTransactions.value.filter(t => t.type === 'out').reduce((sum, t) => sum + t.quantity, 0)
+    
+    summaryStats.value = {
+      totalTransaksi: stockTransactions.value.length,
+      totalBarangMasuk: masuk,
+      totalBarangKeluar: keluar,
+      totalNilai: 'N/A',
+      perubahan: 'Real-time'
+    }
+  } catch (err) {
+    console.error('Fetch error:', err)
+  } finally {
+    isLoading.value = false
   }
-  
-  weeklyData.value = weeklyData.value.map(d => {
-    const masuk = Math.floor(Math.random() * 60 * multiplier) + 10;
-    const keluar = Math.floor(masuk * 0.6);
-    return { ...d, masuk, keluar, value: masuk + keluar };
-  })
+}
+
+import { onMounted } from 'vue'
+onMounted(() => {
+  fetchStockHistory()
 })
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+const formatTime = (dateStr) => {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+}
 </script>
 
 <template>
@@ -201,67 +228,50 @@ watch([selectedPeriod, selectedCategory], () => {
       </div>
     </div>
 
-    <!-- Tables Row -->
-    <div class="tables-row">
-      <!-- Category Breakdown Table -->
+    <div class="tables-row full-width">
+      <!-- Stock Transaction Table -->
       <div class="table-card">
         <div class="table-header">
-          <h3>Detail per Kategori</h3>
+          <h3>Riwayat Pergerakan Stok</h3>
         </div>
         <div class="table-wrapper">
-          <table>
+          <table v-if="!isLoading">
             <thead>
               <tr>
-                <th>Kategori</th>
-                <th>Masuk</th>
-                <th>Keluar</th>
-                <th>Stok</th>
-                <th>Nilai</th>
+                <th>Waktu</th>
+                <th>Barang</th>
+                <th>Tipe</th>
+                <th>Jumlah</th>
+                <th>Oleh / Peminjam</th>
+                <th>Keterangan</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="cat in categoryBreakdown" :key="cat.kategori">
-                <td class="td-kategori">{{ cat.kategori }}</td>
-                <td class="td-number td-masuk">{{ cat.masuk }}</td>
-                <td class="td-number td-keluar">{{ cat.keluar }}</td>
-                <td class="td-number">{{ cat.stok }}</td>
-                <td class="td-nilai">{{ cat.nilai }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Top Items Table -->
-      <div class="table-card">
-        <div class="table-header">
-          <h3>Barang Paling Aktif</h3>
-        </div>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Nama Barang</th>
-                <th>Transaksi</th>
-                <th>Kategori</th>
-                <th>Trend</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(item, idx) in topItems" :key="idx">
-                <td class="td-nama">{{ item.nama }}</td>
-                <td class="td-number td-transaksi">{{ item.transaksi }}</td>
-                <td><span class="cat-badge">{{ item.kategori }}</span></td>
+              <tr v-for="t in stockTransactions" :key="t.id_transaction">
+                <td class="td-time">
+                  <div class="time-cell">
+                    <span class="d-date">{{ formatDate(t.created_at) }}</span>
+                    <span class="d-time">{{ formatTime(t.created_at) }}</span>
+                  </div>
+                </td>
+                <td class="td-nama">{{ t.item_name }}</td>
                 <td>
-                  <span class="trend-badge" :class="'trend-' + item.trend">
-                    <svg v-if="item.trend === 'up'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-                    <svg v-else-if="item.trend === 'down'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span :class="['type-badge', t.type === 'in' ? 'type-in' : 'type-out']">
+                    {{ t.type === 'in' ? 'Masuk' : 'Keluar' }}
                   </span>
                 </td>
+                <td class="td-number" :class="t.type === 'in' ? 'td-masuk' : 'td-keluar'">
+                  {{ t.type === 'in' ? '+' : '-' }}{{ t.quantity }}
+                </td>
+                <td class="td-user">{{ t.user_name }}</td>
+                <td class="td-notes">{{ t.notes }}</td>
+              </tr>
+              <tr v-if="stockTransactions.length === 0">
+                <td colspan="6" class="empty-row">Belum ada riwayat pergerakan stok.</td>
               </tr>
             </tbody>
           </table>
+          <div v-else class="table-loading">Memuat riwayat...</div>
         </div>
       </div>
     </div>
@@ -699,17 +709,18 @@ tbody tr:last-child td { border-bottom: none; }
 .trend-down { background: #fef2f2; color: #dc2626; }
 .trend-same { background: var(--bg-input); color: var(--text-muted); }
 
-/* Responsive */
-@media (max-width: 1200px) {
-  .summary-grid { grid-template-columns: repeat(2, 1fr); }
-  .charts-row { grid-template-columns: 1fr; }
-  .tables-row { grid-template-columns: 1fr; }
-}
+.td-time { min-width: 120px; }
+.time-cell { display: flex; flex-direction: column; gap: 2px; }
+.d-date { font-weight: 600; color: var(--text-primary); font-size: 0.8rem; }
+.d-time { font-size: 0.72rem; color: var(--text-muted); }
+.td-user { font-weight: 600; color: var(--accent); }
+.td-notes { font-size: 0.78rem; color: var(--text-muted); font-style: italic; max-width: 200px; }
 
-@media (max-width: 768px) {
-  .page-header { flex-direction: column; }
-  .header-actions { width: 100%; }
-  .btn-outline, .btn-primary { flex: 1; justify-content: center; }
-  .summary-grid { grid-template-columns: 1fr; }
-}
+.type-badge { padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+.type-in { background: #ecfdf5; color: #059669; }
+.type-out { background: #fff1f2; color: #e11d48; }
+
+.table-loading { padding: 40px; text-align: center; color: var(--text-muted); font-weight: 600; }
+.empty-row { padding: 40px; text-align: center; color: var(--text-muted); font-style: italic; }
+.tables-row.full-width { grid-template-columns: 1fr; }
 </style>

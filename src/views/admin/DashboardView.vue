@@ -1,63 +1,49 @@
-<script setup>
-import { ref } from 'vue'
+import { onMounted } from 'vue'
 
-const stats = [
-  {
-    label: 'Total Barang',
-    value: '2,847',
-    change: '+12%',
-    positive: true,
-    color: '#1e3c72',
-    bgColor: '#eef2ff',
-    icon: 'box'
-  },
-  {
-    label: 'Barang Tersedia',
-    value: '1,923',
-    change: '+8%',
-    positive: true,
-    color: '#059669',
-    bgColor: '#ecfdf5',
-    icon: 'check'
-  },
-  {
-    label: 'Barang Dipinjam',
-    value: '384',
-    change: '-3%',
-    positive: false,
-    color: '#ea580c',
-    bgColor: '#fff7ed',
-    icon: 'arrow'
-  },
-  {
-    label: 'Total Transaksi',
-    value: '12,459',
-    change: '+24%',
-    positive: true,
-    color: '#7c3aed',
-    bgColor: '#f5f3ff',
-    icon: 'chart'
-  }
-]
-
-const activities = ref([
-  { id: 1, nama: 'Laptop Dell Latitude 5540', tipe: 'Masuk', jumlah: 15, tanggal: '11 Feb 2026', user: 'Budi Santoso' },
-  { id: 2, nama: 'Monitor LG 24" IPS', tipe: 'Keluar', jumlah: 5, tanggal: '11 Feb 2026', user: 'Siti Rahayu' },
-  { id: 3, nama: 'Keyboard Mechanical Logitech', tipe: 'Dipinjam', jumlah: 3, tanggal: '10 Feb 2026', user: 'Ahmad Fauzi' },
-  { id: 4, nama: 'Mouse Wireless Logitech M331', tipe: 'Masuk', jumlah: 50, tanggal: '10 Feb 2026', user: 'Dewi Lestari' },
-  { id: 5, nama: 'Printer HP LaserJet Pro', tipe: 'Keluar', jumlah: 2, tanggal: '09 Feb 2026', user: 'Riko Pratama' },
-  { id: 6, nama: 'Proyektor Epson EB-X51', tipe: 'Dipinjam', jumlah: 1, tanggal: '09 Feb 2026', user: 'Rina Wati' },
-  { id: 7, nama: 'Kabel HDMI 2m', tipe: 'Masuk', jumlah: 100, tanggal: '08 Feb 2026', user: 'Joko Widodo' },
-  { id: 8, nama: 'UPS APC 1100VA', tipe: 'Keluar', jumlah: 8, tanggal: '08 Feb 2026', user: 'Maya Sari' },
+const stats = ref([
+  { label: 'Jenis Barang', value: '0', change: 'Live', positive: true, color: '#1e3c72', bgColor: '#eef2ff', icon: 'box' },
+  { label: 'Barang Tersedia', value: '0', change: 'Live', positive: true, color: '#059669', bgColor: '#ecfdf5', icon: 'check' },
+  { label: 'Barang Dipinjam', value: '0', change: 'Live', positive: false, color: '#ea580c', bgColor: '#fff7ed', icon: 'arrow' },
+  { label: 'Total Transaksi', value: '0', change: 'Live', positive: true, color: '#7c3aed', bgColor: '#f5f3ff', icon: 'chart' }
 ])
 
-const getStatusClass = (tipe) => {
-  switch (tipe) {
-    case 'Masuk': return 'status-masuk'
-    case 'Keluar': return 'status-keluar'
-    case 'Dipinjam': return 'status-dipinjam'
-    default: return ''
+const activities = ref([])
+const isLoading = ref(true)
+const baseURL = 'http://127.0.0.1:3000/api'
+
+const fetchDashboard = async () => {
+  isLoading.value = true
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${baseURL}/dashboard/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const result = await res.json()
+    
+    const s = result.stats
+    stats.value[0].value = s.total_items.toLocaleString()
+    stats.value[1].value = s.stock_available.toLocaleString()
+    stats.value[2].value = s.borrowed_items.toLocaleString()
+    stats.value[3].value = s.total_transactions.toLocaleString()
+    
+    activities.value = result.activity || []
+  } catch (err) {
+    console.error('Fetch error:', err)
+  } finally {
+    isLoading.value = false
   }
+}
+
+onMounted(fetchDashboard)
+
+const getStatusClass = (tipe) => {
+  return tipe === 'in' ? 'status-masuk' : 'status-keluar'
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })
 }
 </script>
 
@@ -133,24 +119,29 @@ const getStatusClass = (tipe) => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(item, index) in activities" :key="item.id">
+            <tr v-for="(item, index) in activities" :key="item.id_transaction">
               <td class="td-no">{{ index + 1 }}</td>
               <td class="td-nama">
                 <div class="item-name">
                   <div class="item-avatar" :style="{ background: stats[index % 4].bgColor, color: stats[index % 4].color }">
-                    {{ item.nama.charAt(0) }}
+                    {{ item.item_name.charAt(0) }}
                   </div>
-                  {{ item.nama }}
+                  {{ item.item_name }}
                 </div>
               </td>
               <td>
-                <span class="status-badge" :class="getStatusClass(item.tipe)">
-                  {{ item.tipe }}
+                <span class="status-badge" :class="getStatusClass(item.type)">
+                  {{ item.type === 'in' ? 'Masuk' : 'Keluar' }}
                 </span>
               </td>
-              <td class="td-jumlah">{{ item.jumlah }}</td>
-              <td class="td-user">{{ item.user }}</td>
-              <td class="td-tanggal">{{ item.tanggal }}</td>
+              <td class="td-jumlah" :class="item.type === 'in' ? 'text-in' : 'text-out'">
+                {{ item.type === 'in' ? '+' : '-' }}{{ item.quantity }}
+              </td>
+              <td class="td-user">{{ item.user_name }}</td>
+              <td class="td-tanggal">{{ formatDate(item.created_at) }}</td>
+            </tr>
+            <tr v-if="activities.length === 0 && !isLoading">
+              <td colspan="6" class="empty-row">Belum ada aktivitas terbaru.</td>
             </tr>
           </tbody>
         </table>
@@ -494,6 +485,10 @@ tbody tr:last-child td {
   background: #eef2ff;
   color: #1e3c72;
 }
+
+.text-in { color: #059669; }
+.text-out { color: #dc2626; }
+.empty-row { padding: 40px; text-align: center; color: var(--text-muted); font-style: italic; }
 
 /* ====== RESPONSIVE ====== */
 @media (max-width: 1200px) {

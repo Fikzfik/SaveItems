@@ -9,6 +9,9 @@ const searchQuery = ref('')
 const selectedCategory = ref(0) // 0 means 'Semua'
 const showModal = ref(false)
 const showCategoryModal = ref(false)
+const showDetailModal = ref(false)
+const selectedItemHistory = ref([])
+const isHistoryLoading = ref(false)
 
 const categories = ref([])
 const newCategoryName = ref('')
@@ -212,6 +215,35 @@ const saveItem = async () => {
     alert('Terjadi kesalahan jaringan')
   }
 }
+
+const openDetailModal = async (item) => {
+  currentItem.value = { ...item }
+  showDetailModal.value = true
+  isHistoryLoading.value = true
+  try {
+    const res = await fetch(`${baseURL}/stock-transactions/item/${item.id_inventory}`, {
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    })
+    const data = await res.json()
+    selectedItemHistory.value = data.data || []
+  } catch (err) {
+    console.error(err)
+  } finally {
+    isHistoryLoading.value = false
+  }
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+const formatTime = (dateStr) => {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+}
 </script>
 
 <template>
@@ -329,6 +361,9 @@ const saveItem = async () => {
               <td class="td-harga">{{ formatRupiah(item.price) }}</td>
               <td>
                 <div class="action-btns">
+                  <button class="act-btn act-view" title="Detail" @click="openDetailModal(item)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
                   <button class="act-btn act-edit" title="Edit" @click="editItem(item)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
@@ -421,6 +456,83 @@ const saveItem = async () => {
           </div>
           <div v-if="categories.length === 0" class="empty-state-small">Belum ada kategori</div>
         </div>
+      </div>
+    </div>
+  </div>
+  <!-- Modal Detail Barang -->
+  <div class="modal-overlay" v-if="showDetailModal" @click.self="showDetailModal = false">
+    <div class="modal-content detail-modal">
+      <div class="modal-header">
+        <div class="header-title-box">
+          <span class="sku-tag">{{ currentItem.sku }}</span>
+          <h2>{{ currentItem.name }}</h2>
+        </div>
+        <button class="close-btn" @click="showDetailModal = false">&times;</button>
+      </div>
+      <div class="modal-body scrollable">
+        <div class="detail-info-grid">
+          <div class="info-card">
+            <label>Kategori</label>
+            <span>{{ getCategoryName(currentItem.category_id) }}</span>
+          </div>
+          <div class="info-card">
+            <label>Harga Satuan</label>
+            <span class="price-text">{{ formatRupiah(currentItem.price) }}</span>
+          </div>
+          <div class="info-card">
+            <label>Total Stok</label>
+            <span class="qty-text">{{ currentItem.stock_total }} {{ currentItem.unit }}</span>
+          </div>
+          <div class="info-card">
+            <label>Tersedia</label>
+            <span :class="['qty-text', getStokStatus(currentItem.stock_available, currentItem.stock_total)]">
+              {{ currentItem.stock_available }} {{ currentItem.unit }}
+            </span>
+          </div>
+        </div>
+
+        <div class="history-section">
+          <h3>Riwayat Pergerakan</h3>
+          <div class="history-table-wrapper">
+            <table v-if="!isHistoryLoading">
+              <thead>
+                <tr>
+                  <th>Waktu</th>
+                  <th>Tipe</th>
+                  <th>Jumlah</th>
+                  <th>Oleh</th>
+                  <th>Catatan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="h in selectedItemHistory" :key="h.id_transaction">
+                  <td class="td-time">
+                    <span class="d-date">{{ formatDate(h.created_at) }}</span>
+                    <span class="d-time">{{ formatTime(h.created_at) }}</span>
+                  </td>
+                  <td>
+                    <span :class="['type-tag', h.type === 'in' ? 'type-in' : 'type-out']">
+                      {{ h.type === 'in' ? 'Masuk' : 'Keluar' }}
+                    </span>
+                  </td>
+                  <td :class="h.type === 'in' ? 'text-in' : 'text-out'">
+                    {{ h.type === 'in' ? '+' : '-' }}{{ h.quantity }}
+                  </td>
+                  <td class="td-user">{{ h.user_name }}</td>
+                  <td class="td-notes">{{ h.notes }}</td>
+                </tr>
+                <tr v-if="selectedItemHistory.length === 0">
+                  <td colspan="5" class="empty-row">Belum ada riwayat pergerakan.</td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-else class="loading-history">Memuat riwayat...</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" @click="editItem(currentItem); showDetailModal = false">Edit Barang</button>
+        <button class="btn-secondary" @click="showDetailModal = false">Tutup</button>
       </div>
     </div>
   </div>
@@ -1051,4 +1163,34 @@ tbody tr:last-child td {
   justify-content: flex-end;
   gap: 12px;
 }
+.scrollable { max-height: 70vh; overflow-y: auto; }
+.detail-modal { max-width: 800px; }
+.header-title-box { display: flex; flex-direction: column; gap: 4px; }
+.sku-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent); font-weight: 700; background: var(--accent-bg); padding: 2px 8px; border-radius: 4px; width: fit-content; }
+
+.detail-info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.info-card { background: #f8fafc; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 4px; border: 1px solid #f1f5f9; }
+.info-card label { font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
+.info-card span { font-weight: 700; color: #1e293b; font-size: 0.9rem; }
+.price-text { color: var(--accent) !important; }
+
+.history-section { border-top: 1px solid #f1f5f9; padding-top: 20px; }
+.history-section h3 { font-size: 0.95rem; font-weight: 800; color: #1e293b; margin-bottom: 12px; }
+.history-table-wrapper { background: #fff; border: 1px solid #f1f5f9; border-radius: 12px; overflow: hidden; }
+.history-table-wrapper table { font-size: 0.8rem; }
+.td-time { display: flex; flex-direction: column; }
+.d-date { font-weight: 600; }
+.d-time { font-size: 0.7rem; color: #94a3b8; }
+.type-tag { padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; }
+.type-in { background: #ecfdf5; color: #059669; }
+.type-out { background: #fff1f2; color: #e11d48; }
+.text-in { color: #059669; font-weight: 700; }
+.text-out { color: #dc2626; font-weight: 700; }
+.td-notes { font-size: 0.75rem; color: #64748b; font-style: italic; }
+.loading-history, .empty-row { padding: 30px; text-align: center; color: #94a3b8; }
+
+.act-view { background: #f1f5f9; color: #64748b; }
+.act-view:hover { background: #e2e8f0; color: #1e293b; }
+
+.btn-secondary { padding: 10px 18px; border-radius: 12px; border: 1.5px solid #e2e8f0; background: #fff; font-weight: 600; cursor: pointer; color: #64748b; font-size: 0.82rem; }
 </style>
