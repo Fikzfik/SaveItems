@@ -16,7 +16,7 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const showPassword = ref(false)
 const showSignUpPassword = ref(false)
-const baseURL = 'http://127.0.0.1:3000/api' // Sesuaikan dengan port backend-mu
+const baseURL = '/api'
 
 const toggleMode = () => {
   isSignUp.value = !isSignUp.value

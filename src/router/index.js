@@ -101,7 +101,8 @@ const router = createRouter({
           path: 'laporan',
           name: 'Laporan',
           component: () => import('../views/admin/LaporanView.vue')
-        }
+        },
+
       ]
     },
     {

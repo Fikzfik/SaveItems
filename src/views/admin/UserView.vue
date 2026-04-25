@@ -12,7 +12,7 @@ const fetchUsers = async () => {
   isLoading.value = true
   try {
     const token = localStorage.getItem('token')
-    const response = await fetch('http://localhost:3000/api/users', {
+    const response = await fetch('/api/users', {
       headers: { Authorization: `Bearer ${token}` }
     })
     const resData = await response.json()
@@ -24,10 +24,11 @@ const fetchUsers = async () => {
           nama: u.name,
           email: u.email,
           phone: u.phone,
+          id_role: u.id_role,
           role: u.id_role === 1 ? 'Super Admin' : (u.id_role === 2 ? 'Admin' : 'User'),
-          departemen: 'General', 
+          departemen: 'IT Dept', 
           status: u.status || 'active',
-          color: ['#1e3c72', '#7c3aed', '#059669', '#ea580c', '#dc2626', '#0891b2', '#be185d'][Math.floor(Math.random() * 7)]
+          color: ['#1e3c72', '#7c3aed', '#059669', '#ea580c', '#dc2626', '#0891b2', '#be185d'][u.id_user % 7]
         }))
     } else {
         console.error('API Error:', resData.message)
@@ -66,7 +67,7 @@ const editingId = ref(null)
 const newUser = ref({
   nama: '',
   email: '',
-  role: 'Staff',
+  id_role: 3,
   departemen: 'IT',
   phone: ''
 })
@@ -74,7 +75,7 @@ const newUser = ref({
 const openAddModal = () => {
   isEditing.value = false
   editingId.value = null
-  newUser.value = { nama: '', email: '', role: 'Staff', departemen: 'IT', phone: '' }
+  newUser.value = { nama: '', email: '', id_role: 3, departemen: 'IT', phone: '' }
   showModal.value = true
 }
 
@@ -89,7 +90,7 @@ const deleteUser = async (id) => {
   if (confirm('Apakah Anda yakin ingin menghapus user ini?')) {
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`http://localhost:3000/api/users/${id}`, {
+      const response = await fetch(`/api/users/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -113,13 +114,14 @@ const saveUser = async () => {
     const payload = {
       name: newUser.value.nama,
       email: newUser.value.email,
+      id_role: newUser.value.id_role,
       phone: newUser.value.phone || '-',
       password: 'password123' // Default password for new users
     }
 
     let response
     if (isEditing.value) {
-      response = await fetch(`http://localhost:3000/api/users/${editingId.value}`, {
+      response = await fetch(`/api/users/${editingId.value}`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -128,7 +130,7 @@ const saveUser = async () => {
         body: JSON.stringify(payload)
       })
     } else {
-      response = await fetch('http://localhost:3000/api/users', {
+      response = await fetch('/api/users', {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -313,8 +315,12 @@ const saveUser = async () => {
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Role</label>
-            <input v-model="newUser.role" type="text" placeholder="Jabatan" />
+            <label>Role / Akses</label>
+            <select v-model="newUser.id_role">
+              <option :value="1">Super Admin</option>
+              <option :value="2">Admin</option>
+              <option :value="3">User (Staff)</option>
+            </select>
           </div>
           <div class="form-group">
             <label>Departemen</label>

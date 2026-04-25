@@ -16,7 +16,7 @@ const activateTrial = async () => {
   if (isActivating.value) return
   isActivating.value = true
   try {
-    const res = await fetch('http://localhost:3000/api/companies/activate-trial', {
+    const res = await fetch('/api/companies/activate-trial', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${authStore.token}`

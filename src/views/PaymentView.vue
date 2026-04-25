@@ -13,7 +13,7 @@ const planId = ref(route.query.plan || '2')
 const plans = ref([])
 const fetchPlans = async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/plans')
+    const res = await fetch('/api/plans')
     const data = await res.json()
     if (data.data) {
       plans.value = data.data.map(p => ({
@@ -122,7 +122,7 @@ const processPayment = async () => {
   console.log('Processing payment for plan:', currentPlan.value)
   
   try {
-    const res = await fetch('http://localhost:3000/api/companies/update-subscription', {
+    const res = await fetch('/api/companies/update-subscription', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

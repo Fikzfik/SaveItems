@@ -174,6 +174,7 @@ const handleLogout = () => {
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
+
           </div>
           <span class="nav-label" v-show="isSidebarOpen">{{ item.label }}</span>
           <span class="nav-badge" v-if="item.badge && isSidebarOpen">{{ item.badge }}</span>

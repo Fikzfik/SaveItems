@@ -10,7 +10,7 @@ const isActivating = ref(false)
 const plans = ref([])
 const fetchPlans = async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/plans')
+    const res = await fetch('/api/plans')
     const data = await res.json()
     if (res.ok) {
       plans.value = data.data.map(p => {

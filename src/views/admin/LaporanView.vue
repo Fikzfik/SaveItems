@@ -24,61 +24,61 @@ const summaryStats = ref({
 })
 
 // Chart Data - Transaksi per Minggu
-const weeklyData = ref([
-  { label: 'Sen', masuk: 45, keluar: 28, value: 73 },
-  { label: 'Sel', masuk: 52, keluar: 31, value: 83 },
-  { label: 'Rab', masuk: 38, keluar: 25, value: 63 },
-  { label: 'Kam', masuk: 61, keluar: 42, value: 103 },
-  { label: 'Jum', masuk: 48, keluar: 35, value: 83 },
-  { label: 'Sab', masuk: 25, keluar: 18, value: 43 },
-  { label: 'Min', masuk: 15, keluar: 12, value: 27 }
-])
-
-const maxWeeklyValue = computed(() => Math.max(...weeklyData.value.map(d => d.value)))
-
-// Breakdown by Category
-const categoryBreakdown = ref([
-  { kategori: 'Elektronik', masuk: 145, keluar: 89, stok: 856, nilai: 'Rp 1.2M', persentase: 42 },
-  { kategori: 'Furniture', masuk: 68, keluar: 45, stok: 312, nilai: 'Rp 680K', persentase: 24 },
-  { kategori: 'ATK', masuk: 234, keluar: 198, stok: 1240, nilai: 'Rp 180K', persentase: 18 },
-  { kategori: 'Jaringan', masuk: 52, keluar: 38, stok: 156, nilai: 'Rp 340K', persentase: 16 }
-])
-
-// Top Items
+const weeklyData = ref([])
+const categoryBreakdown = ref([])
 const topItems = ref([
-  { nama: 'Laptop Dell Latitude 5540', transaksi: 45, kategori: 'Elektronik', trend: 'up' },
-  { nama: 'Mouse Wireless Logitech M331', transaksi: 38, kategori: 'Elektronik', trend: 'up' },
-  { nama: 'Kertas A4 80gsm (Rim)', transaksi: 32, kategori: 'ATK', trend: 'down' },
-  { nama: 'Monitor LG 24" IPS', transaksi: 28, kategori: 'Elektronik', trend: 'up' },
-  { nama: 'Kursi Ergonomic', transaksi: 24, kategori: 'Furniture', trend: 'same' }
+  { nama: 'MacBook Pro M2', transaksi: 12, kategori: 'Elektronik', trend: 'up' },
+  { nama: 'Kursi Ergonomis', transaksi: 8, kategori: 'Furniture', trend: 'up' },
+  { nama: 'Dell Latitude', transaksi: 5, kategori: 'Elektronik', trend: 'down' }
 ])
+
+const formatRupiah = (val) => {
+  if (!val) return 'Rp 0'
+  if (val >= 1000000) return 'Rp ' + (val / 1000000).toFixed(1) + 'M'
+  if (val >= 1000) return 'Rp ' + (val / 1000).toFixed(0) + 'K'
+  return 'Rp ' + val
+}
 
 const getTrendIcon = (trend) => trend
 
 const stockTransactions = ref([])
 const isLoading = ref(false)
-const baseURL = 'http://127.0.0.1:3000/api'
+const baseURL = '/api'
 
 const fetchStockHistory = async () => {
   isLoading.value = true
   try {
     const token = localStorage.getItem('token')
-    const res = await fetch(`${baseURL}/stock-transactions`, {
+    
+    // Fetch History
+    const resH = await fetch(`${baseURL}/stock-transactions`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    const result = await res.json()
-    stockTransactions.value = result.data || []
+    if (resH.ok) {
+      const resultH = await resH.json()
+      stockTransactions.value = resultH.data || []
+    }
     
-    // Update summary stats based on real data
-    const masuk = stockTransactions.value.filter(t => t.type === 'in').reduce((sum, t) => sum + t.quantity, 0)
-    const keluar = stockTransactions.value.filter(t => t.type === 'out').reduce((sum, t) => sum + t.quantity, 0)
-    
-    summaryStats.value = {
-      totalTransaksi: stockTransactions.value.length,
-      totalBarangMasuk: masuk,
-      totalBarangKeluar: keluar,
-      totalNilai: 'N/A',
-      perubahan: 'Real-time'
+    // Fetch Stats
+    const resS = await fetch(`${baseURL}/reports/stats`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (resS.ok) {
+      const resultS = await resS.json()
+      weeklyData.value = resultS.weekly || []
+      categoryBreakdown.value = resultS.category || []
+      
+      // Update summary stats
+      const masuk = stockTransactions.value.filter(t => t.type === 'in').reduce((sum, t) => sum + t.quantity, 0)
+      const keluar = stockTransactions.value.filter(t => t.type === 'out').reduce((sum, t) => sum + t.quantity, 0)
+      
+      summaryStats.value = {
+        totalTransaksi: stockTransactions.value.length,
+        totalBarangMasuk: masuk,
+        totalBarangKeluar: keluar,
+        totalNilai: formatRupiah(resultS.total_nilai_global),
+        perubahan: 'Real-time'
+      }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -86,6 +86,11 @@ const fetchStockHistory = async () => {
     isLoading.value = false
   }
 }
+
+const maxWeeklyValue = computed(() => {
+  if (weeklyData.value.length === 0) return 1
+  return Math.max(...weeklyData.value.map(d => d.value))
+})
 
 import { onMounted } from 'vue'
 onMounted(() => {
@@ -217,7 +222,7 @@ const formatTime = (dateStr) => {
           <div class="category-item" v-for="cat in categoryBreakdown" :key="cat.kategori">
             <div class="category-info">
               <span class="category-name">{{ cat.kategori }}</span>
-              <span class="category-value">{{ cat.nilai }}</span>
+              <span class="category-value">{{ formatRupiah(cat.nilai) }}</span>
             </div>
             <div class="progress-bar">
               <div class="progress-fill" :style="{ width: cat.persentase + '%' }"></div>

@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 
 const authStore = useAuthStore()
-const baseURL = 'http://127.0.0.1:3000/api'
+const baseURL = '/api'
 
 const searchQuery = ref('')
 const selectedCategory = ref(0) // 0 means 'Semua'
@@ -335,7 +335,7 @@ const formatTime = (dateStr) => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in filteredItems" :key="item.id_inventory">
+            <tr v-for="(item, index) in filteredItems" :key="item.id_inventory" class="row-clickable" @click="openDetailModal(item)">
               <td class="td-id">{{ item.sku }}</td>
               <td class="td-nama">
                 <div class="item-name">

@@ -1,4 +1,5 @@
-import { onMounted } from 'vue'
+<script setup>
+import { ref, onMounted } from 'vue'
 
 const stats = ref([
   { label: 'Jenis Barang', value: '0', change: 'Live', positive: true, color: '#1e3c72', bgColor: '#eef2ff', icon: 'box' },
@@ -9,7 +10,7 @@ const stats = ref([
 
 const activities = ref([])
 const isLoading = ref(true)
-const baseURL = 'http://127.0.0.1:3000/api'
+const baseURL = '/api'
 
 const fetchDashboard = async () => {
   isLoading.value = true
@@ -18,15 +19,20 @@ const fetchDashboard = async () => {
     const res = await fetch(`${baseURL}/dashboard/stats`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    const result = await res.json()
-    
-    const s = result.stats
-    stats.value[0].value = s.total_items.toLocaleString()
-    stats.value[1].value = s.stock_available.toLocaleString()
-    stats.value[2].value = s.borrowed_items.toLocaleString()
-    stats.value[3].value = s.total_transactions.toLocaleString()
-    
-    activities.value = result.activity || []
+    if (res.ok) {
+      const result = await res.json()
+      const s = result.stats
+      if (s) {
+        stats.value[0].value = (s.total_items || 0).toLocaleString()
+        stats.value[1].value = (s.stock_available || 0).toLocaleString()
+        stats.value[2].value = (s.borrowed_items || 0).toLocaleString()
+        stats.value[3].value = (s.total_transactions || 0).toLocaleString()
+      }
+      
+      activities.value = result.activity || []
+    } else {
+      console.warn('Dashboard fetch failed with status:', res.status)
+    }
   } catch (err) {
     console.error('Fetch error:', err)
   } finally {

@@ -3,7 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
-const baseURL = 'http://127.0.0.1:3000/api'
+const baseURL = '/api'
 
 const searchQuery = ref('')
 const selectedFilter = ref('Semua')
