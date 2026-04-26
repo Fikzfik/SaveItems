@@ -1,19 +1,59 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
-const modules = ref([
-  { id: 1, name: 'Inventory', desc: 'Track and manage all inventory items, categories, and stock levels', icon: 'inventory', enabled: true, installed: true, color: '#1e3c72' },
-  { id: 2, name: 'HR Management', desc: 'Employee management, attendance tracking, and payroll', icon: 'hr', enabled: true, installed: true, color: '#7c3aed' },
-  { id: 3, name: 'Finance', desc: 'Financial reporting, invoicing, and expense management', icon: 'finance', enabled: true, installed: true, color: '#059669' },
-  { id: 4, name: 'CRM', desc: 'Customer relationship management, leads, and sales pipeline', icon: 'crm', enabled: false, installed: false, color: '#ea580c' },
-  { id: 5, name: 'Reports & Analytics', desc: 'Advanced reporting, dashboards, and data visualization', icon: 'reports', enabled: true, installed: true, color: '#0ea5e9' },
-  { id: 6, name: 'API Access', desc: 'RESTful API integration, webhooks, and third-party connections', icon: 'api', enabled: false, installed: false, color: '#dc2626' },
-  { id: 7, name: 'Project Management', desc: 'Task boards, milestones, timelines, and resource planning', icon: 'project', enabled: false, installed: false, color: '#8b5cf6' },
-  { id: 8, name: 'E-Commerce', desc: 'Online store, product catalog, and order management', icon: 'ecommerce', enabled: false, installed: false, color: '#f59e0b' },
-  { id: 9, name: 'Helpdesk', desc: 'Customer support tickets, SLA tracking, and knowledge base', icon: 'helpdesk', enabled: true, installed: true, color: '#06b6d4' },
-])
+const modules = ref([])
+const isLoading = ref(true)
 
-const toggleModule = (mod) => { mod.enabled = !mod.enabled; if (mod.enabled) mod.installed = true }
+const fetchModules = async () => {
+  isLoading.value = true
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch('/api/modules', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const data = await res.json()
+    modules.value = (data.data || []).map(m => ({
+      id: m.id_module,
+      name: m.name,
+      desc: m.description,
+      icon: m.icon,
+      color: m.color || '#1e3c72',
+      enabled: m.is_active,
+      installed: true // Superadmin sees them all as "installed" in the system
+    }))
+  } catch (error) {
+    console.error('Failed to fetch modules:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const toggleModule = async (mod) => {
+  const originalState = mod.enabled
+  mod.enabled = !mod.enabled
+  
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`/api/modules/${mod.id}`, {
+      method: 'PUT',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: mod.name,
+        description: mod.desc,
+        icon: mod.icon,
+        color: mod.color,
+        is_active: mod.enabled
+      })
+    })
+    if (!res.ok) throw new Error('Update failed')
+  } catch (error) {
+    mod.enabled = originalState
+    alert('Gagal memperbarui status modul')
+  }
+}
 
 const searchQuery = ref('')
 const filteredModules = computed(() => {
@@ -47,34 +87,58 @@ const editModule = (mod) => {
   showModal.value = true
 }
 
-const deleteModule = (id) => {
+const deleteModule = async (id) => {
   if (confirm('Apakah Anda yakin ingin menghapus modul ini secara permanen?')) {
-    modules.value = modules.value.filter(m => m.id !== id)
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`/api/modules/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        modules.value = modules.value.filter(m => m.id !== id)
+      }
+    } catch (error) {
+      alert('Gagal menghapus modul')
+    }
   }
 }
 
-const saveModule = () => {
+const saveModule = async () => {
   if (!newModule.value.name || !newModule.value.desc) return
 
-  if (isEditing.value) {
-    const idx = modules.value.findIndex(m => m.id === editingId.value)
-    if (idx !== -1) {
-      modules.value[idx] = { ...modules.value[idx], ...newModule.value }
-    }
-  } else {
-    modules.value.push({
-      id: Date.now(),
+  try {
+    const token = localStorage.getItem('token')
+    const url = isEditing.value ? `/api/modules/${editingId.value}` : '/api/modules'
+    const method = isEditing.value ? 'PUT' : 'POST'
+    
+    const payload = {
       name: newModule.value.name,
-      desc: newModule.value.desc,
+      description: newModule.value.desc,
       icon: newModule.value.icon,
       color: newModule.value.color,
-      enabled: false,
-      installed: false
-    })
-  }
+      is_active: isEditing.value ? newModule.value.enabled : true
+    }
 
-  showModal.value = false
+    const res = await fetch(url, {
+      method,
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (res.ok) {
+      await fetchModules()
+      showModal.value = false
+    }
+  } catch (error) {
+    alert('Gagal menyimpan modul')
+  }
 }
+
+onMounted(fetchModules)
 </script>
 
 <template>

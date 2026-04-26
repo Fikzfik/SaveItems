@@ -4,25 +4,79 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// Simulated subscription data
-const subscription = ref({
-  plan: 'All Access',
-})
+const activeModules = ref([])
+const availableModules = ref([])
+const isLoading = ref(true)
+const subscription = ref({ plan: 'Free' })
 
-const activeModules = ref([
-  { id: 1, name: 'Inventory', desc: 'Kelola stok, gudang, dan aset perusahaan secara real-time.', icon: 'inventory', color: '#1e3c72', path: '/dashboard/inventori', stats: '2,847 barang' },
-  { id: 2, name: 'HR & Payroll', desc: 'Manajemen karyawan, absensi, dan penggajian otomatis.', icon: 'hr', color: '#7c3aed', path: '/dashboard', stats: '24 karyawan' },
-  { id: 3, name: 'Akuntansi', desc: 'Pembukuan, laporan keuangan, dan manajemen invoice.', icon: 'finance', color: '#059669', path: '/dashboard', stats: '142 invoice' },
-  { id: 5, name: 'Point of Sale', desc: 'Kasir digital, transaksi cepat, dan laporan penjualan.', icon: 'pos', color: '#0ea5e9', path: '/dashboard', stats: '89 transaksi hari ini' },
-  { id: 8, name: 'Helpdesk', desc: 'Tiket support, SLA tracking, dan knowledge base.', icon: 'helpdesk', color: '#06b6d4', path: '/dashboard', stats: '12 tiket terbuka' },
-  { id: 9, name: 'Manufacturing', desc: 'Bill of Materials, work order, dan quality control.', icon: 'manufacturing', color: '#dc2626', path: '/dashboard', stats: '5 work order' },
-])
+const fetchModules = async () => {
+  isLoading.value = true
+  try {
+    const token = localStorage.getItem('token')
+    const resAll = await fetch('/api/modules', { headers: { 'Authorization': `Bearer ${token}` } })
+    const allData = await resAll.json()
+    const allModules = allData.data || []
 
-const availableModules = ref([
-  { id: 4, name: 'CRM', desc: 'Kelola pelanggan, pipeline penjualan, dan marketing automation.', icon: 'crm', color: '#ea580c', path: '/dashboard', stats: 'Akses penuh CRM' },
-  { id: 6, name: 'Project', desc: 'Task board, milestone, timeline, dan resource planning.', icon: 'project', color: '#8b5cf6', path: '/dashboard', stats: 'Tanpa batas project' },
-  { id: 7, name: 'E-Commerce', desc: 'Integrasi platform toko online, katalog produk, dan logistik.', icon: 'ecommerce', color: '#f59e0b', path: '/dashboard', stats: 'Sync realtime' },
-])
+    const resCompany = await fetch('/api/modules/company', { headers: { 'Authorization': `Bearer ${token}` } })
+    const companyData = await resCompany.json()
+    const companyModules = companyData.data || []
+
+    activeModules.value = companyModules.filter(m => m.status === 'active').map(cm => ({
+      ...cm.module,
+      cm_id: cm.id_company_module,
+      status: cm.status,
+      color: cm.module.color || '#1e3c72',
+      path: cm.module.name === 'Inventory' ? '/dashboard/inventori' : '/dashboard'
+    }))
+
+    const activeIds = activeModules.value.map(m => m.id_module)
+      ...m,
+      color: m.color || '#1e3c72',
+      path: m.name === 'Inventory' ? '/dashboard/inventori' : '/dashboard'
+    }))
+
+    const resUser = await fetch('/api/companies/me', { headers: { 'Authorization': `Bearer ${token}` } })
+    const userData = await resUser.json()
+    if (userData.data) {
+      subscription.value.plan = userData.data.plan_name || 'Free'
+    }
+  } catch (error) {
+    console.error('Failed to fetch modules:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const installModule = async (mod) => {
+  if (confirm(`Instal modul ${mod.name} sekarang?`)) {
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`/api/modules/install/${mod.id_module}`, { 
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) await fetchModules()
+    } catch (error) {
+      console.error('Install failed:', error)
+    }
+  }
+}
+
+const uninstallModule = async (mod, event) => {
+  event.stopPropagation()
+  if (confirm(`Nonaktifkan modul ${mod.name}?`)) {
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`/api/modules/uninstall/${mod.id_module}`, { 
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) await fetchModules()
+    } catch (error) {
+      console.error('Uninstall failed:', error)
+    }
+  }
+}
 
 const activeTab = ref('active')
 const searchQuery = ref('')
@@ -32,20 +86,8 @@ const filteredAvailable = computed(() => availableModules.value.filter(m => m.na
 
 const goModule = (mod) => router.push(mod.path)
 
-const installModule = (mod) => {
-  if (confirm(`Instal modul ${mod.name} sekarang?`)) {
-    availableModules.value = availableModules.value.filter(m => m.id !== mod.id)
-    activeModules.value.push(mod)
-  }
-}
-
-const uninstallModule = (mod, event) => {
-  event.stopPropagation() // Mencegah triger click card-nya (yg membuka dashboard modul)
-  if (confirm(`Nonaktifkan modul ${mod.name}? Anda tetap dapat mengaktifkannya lagi nanti dari tab Jelajahi.`)) {
-    activeModules.value = activeModules.value.filter(m => m.id !== mod.id)
-    availableModules.value.push(mod)
-  }
-}
+import { onMounted } from 'vue'
+onMounted(fetchModules)
 </script>
 
 <template>

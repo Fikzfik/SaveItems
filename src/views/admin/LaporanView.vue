@@ -12,7 +12,19 @@ const periods = [
   { value: 'custom', label: 'Custom Range' }
 ]
 
-const categories = ['semua', 'Elektronik', 'Furniture', 'ATK', 'Jaringan']
+const categories = ref([{ id: 0, name: 'semua' }])
+const fetchCategories = async () => {
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch('/api/categories', { headers: { 'Authorization': `Bearer ${token}` } })
+    const data = await res.json()
+    if (data.data) {
+      categories.value = [{ id: 0, name: 'semua' }, ...data.data]
+    }
+  } catch (err) {
+    console.error('Error fetching categories:', err)
+  }
+}
 
 // Summary Stats
 const summaryStats = ref({
@@ -95,6 +107,7 @@ const maxWeeklyValue = computed(() => {
 import { onMounted } from 'vue'
 onMounted(() => {
   fetchStockHistory()
+  fetchCategories()
 })
 
 const formatDate = (dateStr) => {
@@ -142,7 +155,7 @@ const formatTime = (dateStr) => {
         <label>Kategori</label>
         <select v-model="selectedCategory" class="filter-select">
           <option value="semua">Semua Kategori</option>
-          <option v-for="cat in categories.slice(1)" :key="cat" :value="cat">{{ cat }}</option>
+          <option v-for="cat in categories.slice(1)" :key="cat.id_category" :value="cat.name">{{ cat.name }}</option>
         </select>
       </div>
     </div>

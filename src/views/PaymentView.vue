@@ -119,25 +119,49 @@ const processPayment = async () => {
   }
 
   isProcessing.value = true
-  console.log('Processing payment for plan:', currentPlan.value)
   
   try {
+    const token = localStorage.getItem('token')
+    
+    // 1. Create Invoice/Transaction record
+    const invRes = await fetch('/api/subscriptions/create-invoice', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ 
+        id_plan: currentPlan.value.id,
+        payment_method: paymentMethod.value 
+      })
+    })
+    
+    if (!invRes.ok) throw new Error('Gagal membuat invoice')
+    const invData = await invRes.json()
+    const transactionId = invData.data.id_transaction
+
+    // 2. Simulate Payment Confirmation (For demo purposes, we auto-confirm if card is used)
+    if (paymentMethod.value === 'card') {
+      const confirmRes = await fetch(`/api/subscriptions/confirm/${transactionId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (!confirmRes.ok) throw new Error('Konfirmasi pembayaran gagal')
+    }
+
+    // 3. Update Company Subscription status
     const res = await fetch('/api/companies/update-subscription', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authStore.token}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ id_plan: currentPlan.value.id })
     })
     
-    console.log('Payment response status:', res.status)
     const data = await res.json()
-    console.log('Payment response data:', data)
-
     if (!res.ok) throw new Error(data.message || 'Gagal update langganan')
     
-    // Update store with new company/plan info directly
     authStore.updateCompanyData(data.data)
     
     isProcessing.value = false

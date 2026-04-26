@@ -6,7 +6,33 @@ import { useAuthStore } from '@/stores/auth'
 const authStore = useAuthStore()
 const router = useRouter()
 
-// Real user subscription data from authStore
+const activeModules = ref([])
+const isLoading = ref(true)
+
+const fetchActiveModules = async () => {
+  isLoading.value = true
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch('/api/modules/company', { headers: { 'Authorization': `Bearer ${token}` } })
+    const data = await res.json()
+    if (data.data) {
+      activeModules.value = data.data.filter(m => m.status === 'active').map(cm => ({
+        ...cm.module,
+        color: ['#1e3c72', '#7c3aed', '#059669', '#ea580c', '#0ea5e9', '#8b5cf6', '#f59e0b', '#06b6d4', '#dc2626'][cm.module.id_module % 9],
+        path: cm.module.name === 'Inventory' ? '/dashboard/inventori' : '/dashboard',
+        stats: { label: 'Status', value: 'Ready' }
+      }))
+    }
+  } catch (error) {
+    console.error('Error fetching active modules:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+import { onMounted } from 'vue'
+onMounted(fetchActiveModules)
+
 const subscription = computed(() => {
   let renewDate = '-'
   if (authStore.user?.subscription_end) {
@@ -23,24 +49,6 @@ const subscription = computed(() => {
   }
 })
 
-// Modules display based on subscription status
-const allModulesPool = [
-  { id: 1, name: 'Inventory', desc: 'Kelola stok, gudang, dan aset perusahaan.', icon: 'inventory', color: '#1e3c72', path: '/dashboard', stats: { label: 'Total Barang', value: '2,847' } },
-  { id: 2, name: 'HR & Payroll', desc: 'Karyawan, absensi, dan penggajian.', icon: 'hr', color: '#7c3aed', border: '#7c3aed', path: '/dashboard', stats: { label: 'Karyawan', value: '24' } },
-  { id: 3, name: 'Akuntansi', desc: 'Pembukuan dan laporan keuangan.', icon: 'finance', color: '#059669', path: '/dashboard', stats: { label: 'Invoice Bulan Ini', value: '142' } },
-  { id: 4, name: 'CRM', desc: 'Pelanggan dan pipeline penjualan.', icon: 'crm', color: '#ea580c', path: '/dashboard', stats: { label: 'Leads Aktif', value: '38' } },
-  { id: 5, name: 'Point of Sale', desc: 'Kasir digital dan laporan penjualan.', icon: 'pos', color: '#0ea5e9', path: '/dashboard', stats: { label: 'Transaksi Hari Ini', value: '89' } },
-  { id: 6, name: 'Project', desc: 'Task board dan resource planning.', icon: 'project', color: '#8b5cf6', path: '/dashboard', stats: { label: 'Task Aktif', value: '15' } },
-  { id: 7, name: 'E-Commerce', desc: 'Toko online dan manajemen pesanan.', icon: 'ecommerce', color: '#f59e0b', path: '/dashboard', stats: { label: 'Pesanan Baru', value: '7' } },
-  { id: 8, name: 'Helpdesk', desc: 'Tiket support dan knowledge base.', icon: 'helpdesk', color: '#06b6d4', path: '/dashboard', stats: { label: 'Tiket Terbuka', value: '12' } },
-  { id: 9, name: 'Manufacturing', desc: 'BoM, work order, dan quality control.', icon: 'manufacturing', color: '#dc2626', path: '/dashboard', stats: { label: 'Work Order', value: '5' } },
-]
-
-const activeModules = computed(() => {
-  if (authStore.isSubscribed) return allModulesPool
-  return [] // Or filter based on specific plan if needed
-})
-
 const quickStats = computed(() => [
   { label: 'Modul Aktif', value: activeModules.value.length.toString(), color: '#1e3c72' },
   { label: 'User Aktif', value: '1', color: '#7c3aed' },
@@ -48,8 +56,7 @@ const quickStats = computed(() => [
   { label: 'Storage', value: '0 GB', color: '#ea580c' },
 ])
 
-const recentActivity = ref([]) // Empty for now until backend logs are connected
-
+const recentActivity = ref([]) 
 const goModule = (mod) => router.push(mod.path)
 </script>
 
