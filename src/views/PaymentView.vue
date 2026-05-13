@@ -136,8 +136,8 @@ const processPayment = async () => {
       })
     })
     
-    if (!invRes.ok) throw new Error('Gagal membuat invoice')
     const invData = await invRes.json()
+    if (!invRes.ok) throw new Error(invData.message || 'Gagal membuat invoice')
     const transactionId = invData.data.id_transaction
 
     // 2. Simulate Payment Confirmation (For demo purposes, we auto-confirm if card is used)

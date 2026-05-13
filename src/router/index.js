@@ -179,6 +179,12 @@ router.beforeEach((to, from, next) => {
     return next('/dashboard') // Redirect back to normal dashboard if not admin
   }
 
+  // Dashboard subscription check
+  if (to.path.startsWith('/dashboard') && !authStore.isSubscribed && !authStore.isSuperAdmin) {
+    console.warn('Access denied: User not subscribed')
+    return next('/subscribe')
+  }
+
   // Module subscription check
   if (to.meta.requiredModule && !authStore.hasModule(to.meta.requiredModule)) {
     return next('/subscribe') // Redirect to sub page if no module access

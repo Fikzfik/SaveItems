@@ -30,6 +30,7 @@ const fetchModules = async () => {
     }))
 
     const activeIds = activeModules.value.map(m => m.id_module)
+    availableModules.value = allModules.filter(m => !activeIds.includes(m.id_module)).map(m => ({
       ...m,
       color: m.color || '#1e3c72',
       path: m.name === 'Inventory' ? '/dashboard/inventori' : '/dashboard'

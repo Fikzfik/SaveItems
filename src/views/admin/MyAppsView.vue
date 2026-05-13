@@ -40,6 +40,8 @@ const subscription = computed(() => {
     if (!isNaN(d.getTime())) {
       renewDate = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
     }
+  } else {
+    renewDate = 'Selamanya'
   }
   
   return {
